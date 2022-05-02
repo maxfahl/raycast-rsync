@@ -1,19 +1,17 @@
 import { Action, ActionPanel, Form, List } from '@raycast/api'
-import { FC, useCallback, useEffect, useRef, useState } from 'react'
-import RsyncEntry, { SshSelection } from '../models/rsync-entry'
-import rsyncOptions, { RsyncOption } from '../data/rsync-options'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import RsyncEntry, { RsyncOption, SshSelection } from '../models/rsync-entry'
+import rsyncOptions, { RsyncDataOption } from '../data/rsync-options'
 import Sugar from 'sugar'
 
 type ItemFormProps = {
   source?: RsyncEntry
 }
 
-// const availableOptions: Option[] = rsyncOptions.map(rso => {
-//
-// })
-
 const ItemForm: FC<ItemFormProps> = ({ source }) => {
   const [item, setItem] = useState<RsyncEntry>(source || new RsyncEntry())
+  const [optionFilter, setOptionFilter] = useState<string>('')
+  const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>(rsyncOptions)
 
   const setValue = (propPath: string, value: string | boolean) => {
     setItem(prev => Sugar.Object.set(prev.clone(), propPath, value) as RsyncEntry)
@@ -26,18 +24,37 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
     [item]
   )
 
-  const getOptionFields = useCallback((option: RsyncOption) => {
-    return (
-      <>
-        <Form.Checkbox
-          id={`option-${option.name}`}
-          label={option.name}
-          defaultValue={false}
-          onChange={setValue.bind(this, 'destination.path')}
-        />
-      </>
-    )
-  }, [])
+  const getOptionFields = useCallback(
+    (option: RsyncDataOption) => {
+      return (
+        <>
+          <Form.Checkbox
+            key={`option-${option.name}-enabled`}
+            id={`option-${option.name}-enabled`}
+            label={option.name}
+            defaultValue={item.options[option.name]?.enabled}
+            onChange={(value: boolean) => {
+              const prevValue = item.options[option.name]?.enabled
+              if (value || (!value && prevValue !== undefined)) {
+                setValue(`options[${option.name}].enabled`, value)
+              }
+            }}
+          />
+          {option.enabled && (
+            <Form.TextField
+              id={`option-${option.name}-value`}
+              key={`option-${option.name}-value`}
+              title="Parameter"
+              placeholder={item.options[option.name].param}
+              defaultValue={item.options[option.name].value}
+              onChange={setValue.bind(this, `option[${option.name}].value`)}
+            />
+          )}
+        </>
+      )
+    },
+    [item]
+  )
 
   const getLocationFields = useCallback(
     (location: 'source' | 'destination') => {
@@ -69,9 +86,27 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
 
   useEffect(
     function () {
-      console.log(JSON.stringify(item.toRawData().sshSelection))
+      console.log(JSON.stringify(item.toRawData()))
     },
     [item]
+  )
+
+  useEffect(
+    function () {
+      const filterString = optionFilter.toLowerCase()
+      if (optionFilter) {
+        setVisibleOptions(
+          rsyncOptions.filter(
+            rso => rso.name.toLowerCase().includes(filterString)
+            // ||
+            // rso.description?.toLowerCase().includes(filterString)
+          )
+        )
+      } else {
+        setVisibleOptions(rsyncOptions)
+      }
+    },
+    [optionFilter]
   )
 
   return (
@@ -141,7 +176,8 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
 
       <Form.Separator />
       <Form.Description text="Options" />
-      {rsyncOptions.map(getOptionFields)}
+      <Form.TextField id="optionsFilter" title="Filter" onChange={setOptionFilter} />
+      {visibleOptions.map(getOptionFields)}
     </Form>
   )
 }

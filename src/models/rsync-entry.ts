@@ -1,14 +1,17 @@
 import RsyncLocation, { RsyncLocationRaw } from './rsync-location'
-import RsyncOption, { RsyncOptionRaw } from './rsync-option'
+import { RsyncDataOption } from '../data/rsync-options'
 
 export type SshSelection = 'none' | 'source' | 'destination'
-type OptionMap = Map<string, RsyncOption>
+export type RsyncOption = {
+  value: string
+} & RsyncDataOption
+type Options = { [key: string]: RsyncOption }
 
 export default class RsyncEntry {
   public name: string
   public source: RsyncLocation
   public destination: RsyncLocation
-  public options: OptionMap
+  public options: Options
   public sshSelection: SshSelection
 
   constructor(rawData?: RsyncEntryRaw) {
@@ -16,32 +19,25 @@ export default class RsyncEntry {
       this.name = rawData.name
       this.source = new RsyncLocation(rawData.source)
       this.destination = new RsyncLocation(rawData.destination)
-      this.options = new Map()
-      for (const [key, optionRaw] of Object.entries(rawData.options)) {
-        this.options.set(key, new RsyncOption(optionRaw))
-      }
+      this.options = rawData.options
       this.sshSelection = rawData.sshSelection
     } else {
       this.name = ''
       this.source = new RsyncLocation()
       this.destination = new RsyncLocation()
-      this.options = new Map()
+      this.options = {}
       this.sshSelection = 'none'
     }
   }
 
   toRawData(): RsyncEntryRaw {
-    const raw = {
+    return {
       name: this.name,
       source: this.source.toRawData(),
       destination: this.destination.toRawData(),
-      options: {},
+      options: this.options,
       sshSelection: this.sshSelection,
     } as RsyncEntryRaw
-    for (const [key, option] of Object.entries(this.options)) {
-      raw.options[key] = option.toRawData()
-    }
-    return raw
   }
 
   clone() {
@@ -53,6 +49,6 @@ export type RsyncEntryRaw = {
   name: string
   source: RsyncLocationRaw
   destination: RsyncLocationRaw
-  options: { [key: string]: RsyncOptionRaw }
+  options: Options
   sshSelection: SshSelection
 }

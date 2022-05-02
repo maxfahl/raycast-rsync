@@ -1,11 +1,4 @@
-export type RsyncDataOption = {
-  enabled?: boolean
-  name: string
-  description: string
-  param?: string
-}
-
-export default [
+var arr = [
   {
     name: 'verbose',
     description: 'increase verbosity',
@@ -490,4 +483,9 @@ export default [
     name: 'no-detach',
     description: 'do not detach from the parent',
   },
-] as RsyncDataOption[]
+]
+
+let clean = [...new Map(arr.map(item => [item.name, item])).values()]
+// var clean = arr.filter((arr, index, self) => index === self.findIndex(t => t.name === arr.name))
+
+console.log(JSON.stringify(clean), arr.length - clean.length)
