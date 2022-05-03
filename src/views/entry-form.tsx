@@ -1,65 +1,99 @@
-import { Action, ActionPanel, Form, List } from '@raycast/api'
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import RsyncEntry, { RsyncOption, SshSelection } from '../models/rsync-entry'
+import { Action, ActionPanel, Form, useNavigation } from '@raycast/api'
+import { FC, Fragment, useCallback, useEffect, useState } from 'react'
+import RsyncEntry, { RsyncOption } from '../models/rsync-entry'
 import rsyncOptions, { RsyncDataOption } from '../data/rsync-options'
 import Sugar from 'sugar'
+import useEntries from '../hooks/use-entries'
 
-type ItemFormProps = {
+type EntryFormProps = {
   source?: RsyncEntry
 }
 
-const ItemForm: FC<ItemFormProps> = ({ source }) => {
-  const [item, setItem] = useState<RsyncEntry>(source || new RsyncEntry())
+const EntryForm: FC<EntryFormProps> = ({ source }) => {
+  // const [render, setRender] = useState(0)
+  const [entry, setEntry] = useState<RsyncEntry>(source || new RsyncEntry())
   const [optionFilter, setOptionFilter] = useState<string>('')
-  const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>(rsyncOptions)
+  const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>([])
+  const [command, setCommand] = useState<string>('')
+  const [error, setError] = useState<string>('')
 
-  const setValue = (propPath: string, value: string | boolean) => {
-    setItem(prev => Sugar.Object.set(prev.clone(), propPath, value) as RsyncEntry)
+  const { pop } = useNavigation()
+  const { addEntry, updateEntry } = useEntries()
+
+  const saveEntry = async () => {
+    if (source) {
+      await updateEntry(entry)
+    } else {
+      await addEntry(entry)
+    }
+    pop()
+  }
+
+  // const recentlyOpenedOptionParamFieldRef = useRef<>();
+
+  const setValue = (propPath: string, value: boolean | string | RsyncOption) => {
+    setEntry(prev => Sugar.Object.set(prev.clone(), propPath, value) as RsyncEntry)
+    // setItem(prev => Sugar.Object.set(prev, propPath, value) as RsyncEntry)
+    // setRender(prev => prev + 1)
   }
 
   const getDefaultValue = useCallback(
     (propPath: string): string => {
-      return Sugar.Object.get<string>(item, propPath)
+      return Sugar.Object.get<string>(entry, propPath)
     },
-    [item]
+    [entry]
   )
 
   const getOptionFields = useCallback(
     (option: RsyncDataOption) => {
+      // const optionSource = rsyncOptions.find(o => o.name === option.name)
+      // if (option == undefined) console.log('yes')
       return (
-        <>
+        <Fragment key={`option-${option.name}`}>
           <Form.Checkbox
-            key={`option-${option.name}-enabled`}
             id={`option-${option.name}-enabled`}
             label={option.name}
-            defaultValue={item.options[option.name]?.enabled}
-            onChange={(value: boolean) => {
-              const prevValue = item.options[option.name]?.enabled
-              if (value || (!value && prevValue !== undefined)) {
-                setValue(`options[${option.name}].enabled`, value)
+            defaultValue={entry.options[option.name]?.enabled}
+            onChange={(enable: boolean) => {
+              const exists = !!entry.options[option.name]
+              const enabled = entry.options[option.name]?.enabled
+              const hadValue = !!entry.options[option.name]?.value
+
+              if (enable || (!enable && enabled !== undefined)) {
+                if (!enable && !hadValue) {
+                  setEntry(prev => {
+                    delete prev.options[option.name]
+                    return prev
+                  })
+                } else if (!!enabled !== enable) {
+                  setValue(`options[${option.name}]`, {
+                    ...(exists ? entry.options[option.name] : option),
+                    enabled: enable,
+                  })
+                }
               }
             }}
           />
-          {option.enabled && (
+
+          {/*{item.options[option.name]?.enabled && item.options[option.name]?.param && (*/}
+          {!!option.param && (
             <Form.TextField
               id={`option-${option.name}-value`}
-              key={`option-${option.name}-value`}
-              title="Parameter"
-              placeholder={item.options[option.name].param}
-              defaultValue={item.options[option.name].value}
+              placeholder={option.param}
+              defaultValue={entry.options[option.name]?.value ?? ''}
               onChange={setValue.bind(this, `option[${option.name}].value`)}
             />
           )}
-        </>
+        </Fragment>
       )
     },
-    [item]
+    [entry.options]
   )
 
-  const getLocationFields = useCallback(
+  const getSshFields = useCallback(
     (location: 'source' | 'destination') => {
-      return (
-        <>
+      return entry.sshSelection === location ? (
+        <Fragment key={`location-fields-${location}`}>
           <Form.TextField
             id={`${location}Username`}
             title="Username"
@@ -78,17 +112,10 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
             defaultValue={getDefaultValue(`${location}.port`)}
             onChange={setValue.bind(this, `${location}.port`)}
           />
-        </>
-      )
+        </Fragment>
+      ) : null
     },
-    [getDefaultValue]
-  )
-
-  useEffect(
-    function () {
-      console.log(JSON.stringify(item.toRawData()))
-    },
-    [item]
+    [getDefaultValue, entry.sshSelection]
   )
 
   useEffect(
@@ -109,14 +136,27 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
     [optionFilter]
   )
 
+  useEffect(
+    function () {
+      try {
+        const command = entry.getCommand()
+        console.log('command', command)
+        setCommand(command)
+      } catch (error: any) {
+        console.log('error', error)
+        setError(error)
+      }
+    },
+    [entry]
+  )
+
+  const cta = source ? 'Update entry' : 'Create entry'
   return (
     <Form
+      navigationTitle={cta}
       actions={
         <ActionPanel>
-          <Action.SubmitForm
-            title={source ? 'Update entry' : 'Create entry'}
-            onSubmit={values => console.log(values)}
-          />
+          <Action.SubmitForm title={cta} onSubmit={saveEntry} />
           <Action
             title={'Run'}
             onAction={() => {
@@ -127,11 +167,12 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
       }
     >
       <Form.Description text="General" />
+
       <Form.TextField
         id="name"
         title="Name"
         placeholder={'Website backup, photo collection, remote notes...'}
-        autoFocus={true}
+        autoFocus={false}
         defaultValue={getDefaultValue('name')}
         onChange={setValue.bind(this, 'name')}
       />
@@ -148,13 +189,14 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
         onChange={setValue.bind(this, 'sshSelection')}
       >
         <Form.Dropdown.Item value="none" title="None" />
-        <Form.Dropdown.Item value="source" title="For Source" />
-        <Form.Dropdown.Item value="destination" title="For Destination" />
+        <Form.Dropdown.Item value="source" title="Source" />
+        <Form.Dropdown.Item value="destination" title="Destination" />
       </Form.Dropdown>
 
       <Form.Separator />
       <Form.Description text="Source" />
-      {item.sshSelection === 'source' && getLocationFields('source')}
+
+      {getSshFields('source')}
       <Form.TextField
         id="sourcePath"
         title="Path"
@@ -165,7 +207,8 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
 
       <Form.Separator />
       <Form.Description text="Destination" />
-      {item.sshSelection === 'destination' && getLocationFields('destination')}
+
+      {getSshFields('destination')}
       <Form.TextField
         id="destinationPath"
         title="Path"
@@ -176,10 +219,11 @@ const ItemForm: FC<ItemFormProps> = ({ source }) => {
 
       <Form.Separator />
       <Form.Description text="Options" />
+
       <Form.TextField id="optionsFilter" title="Filter" onChange={setOptionFilter} />
       {visibleOptions.map(getOptionFields)}
     </Form>
   )
 }
 
-export default ItemForm
+export default EntryForm
