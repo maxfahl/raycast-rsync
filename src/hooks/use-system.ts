@@ -11,12 +11,12 @@ type UseSystemOutput = {
 
 const useSystem = (): UseSystemOutput => {
   const doExec = (command: string) => {
-    return new Promise<DoExecResult>((resolve, reject) => {
+    return new Promise<DoExecResult>(resolve => {
       exec(command, (error, stdout) => {
         if (error) {
-          reject({
+          resolve({
             success: false,
-            result: error,
+            result: error.message,
           })
         } else {
           resolve({

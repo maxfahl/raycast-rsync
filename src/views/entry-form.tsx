@@ -29,12 +29,8 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
     pop()
   }
 
-  // const recentlyOpenedOptionParamFieldRef = useRef<>();
-
   const setValue = (propPath: string, value: boolean | string | RsyncOption) => {
     setEntry(prev => Sugar.Object.set(prev.clone(), propPath, value) as RsyncEntry)
-    // setItem(prev => Sugar.Object.set(prev, propPath, value) as RsyncEntry)
-    // setRender(prev => prev + 1)
   }
 
   const getDefaultValue = useCallback(
@@ -46,18 +42,19 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
 
   const getOptionFields = useCallback(
     (option: RsyncDataOption) => {
-      // const optionSource = rsyncOptions.find(o => o.name === option.name)
-      // if (option == undefined) console.log('yes')
+      const myEntry = entry.options[option.name]
+
       return (
         <Fragment key={`option-${option.name}`}>
           <Form.Checkbox
             id={`option-${option.name}-enabled`}
-            label={option.name}
+            label={`--${option.name}`}
             defaultValue={entry.options[option.name]?.enabled}
+            info={option.description}
             onChange={(enable: boolean) => {
-              const exists = !!entry.options[option.name]
-              const enabled = entry.options[option.name]?.enabled
-              const hadValue = !!entry.options[option.name]?.value
+              const exists = !!myEntry
+              const enabled = myEntry?.enabled
+              const hadValue = myEntry?.value
 
               if (enable || (!enable && enabled !== undefined)) {
                 if (!enable && !hadValue) {
@@ -75,13 +72,13 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
             }}
           />
 
-          {/*{item.options[option.name]?.enabled && item.options[option.name]?.param && (*/}
+          {/*{myEntry?.enabled && myEntry?.param && (*/}
           {!!option.param && (
             <Form.TextField
               id={`option-${option.name}-value`}
               placeholder={option.param}
               defaultValue={entry.options[option.name]?.value ?? ''}
-              onChange={setValue.bind(this, `option[${option.name}].value`)}
+              onChange={setValue.bind(this, `options[${option.name}].value`)}
             />
           )}
         </Fragment>
@@ -122,13 +119,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
     function () {
       const filterString = optionFilter.toLowerCase()
       if (optionFilter) {
-        setVisibleOptions(
-          rsyncOptions.filter(
-            rso => rso.name.toLowerCase().includes(filterString)
-            // ||
-            // rso.description?.toLowerCase().includes(filterString)
-          )
-        )
+        setVisibleOptions(rsyncOptions.filter(rso => rso.name.toLowerCase().includes(filterString)))
       } else {
         setVisibleOptions(rsyncOptions)
       }
@@ -149,6 +140,14 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
     },
     [entry]
   )
+
+  // Debug help
+  // useEffect(
+  //   function () {
+  //     console.log('Entry Changed:', JSON.stringify(entry))
+  //   },
+  //   [entry]
+  // )
 
   const cta = source ? 'Update Entry' : 'Create Entry'
   return (

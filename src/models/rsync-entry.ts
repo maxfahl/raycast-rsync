@@ -40,20 +40,23 @@ export default class RsyncEntry {
     const cmd = ['rsync']
 
     for (const [, option] of Object.entries(this.options)) {
-      let optionCommand = `--${option.name}`
-      if (option.value) optionCommand = `${optionCommand}=${option.value}`
+      const { name, param, value } = option
+      let optionCommand = `--${name}`
+      if (param && !value) throw `Option "${name}" does not have a value.`
+      if (value) optionCommand = `${optionCommand}=${value}`
       cmd.push(optionCommand)
     }
 
     if (this.sshSelection !== 'none') {
       const port = this[this.sshSelection].port
+      if (isNaN(Number(port))) throw `Port entered for ${this.sshSelection} has to be a number.`
       cmd.push(port !== '22' ? `-e "ssh -p ${port}"` : `-e ssh`)
     }
 
     cmd.push(
       ...[
-        this.source.getCommandPart(this.sshSelection === 'source'),
-        this.destination.getCommandPart(this.sshSelection === 'destination'),
+        this.source.getCommandPart('source', this.sshSelection === 'source'),
+        this.destination.getCommandPart('source', this.sshSelection === 'destination'),
       ]
     )
 

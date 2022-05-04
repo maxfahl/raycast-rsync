@@ -4,6 +4,7 @@ import { LocalStorage, useNavigation } from '@raycast/api'
 import useEntryStore from '../store'
 import useSystem, { DoExecResult } from './use-system'
 import Result from '../views/result'
+import { showToast, Toast } from '@raycast/api'
 
 type UseEntriesOutput = {
   entries: RsyncEntry[]
@@ -57,7 +58,7 @@ const useEntries = (): UseEntriesOutput => {
     const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
     if (prevEntryIndex === -1) throw 'Could not find entry to update'
     const newEntries = [...entries]
-    newEntries.splice(prevEntryIndex, prevEntryIndex + 1, entry)
+    newEntries.splice(prevEntryIndex, 1, entry)
     updateEntries(newEntries)
   }
 
@@ -65,25 +66,40 @@ const useEntries = (): UseEntriesOutput => {
     const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
     if (prevEntryIndex === -1) throw 'Could not find entry to update'
     const newEntries = [...entries]
-    newEntries.splice(prevEntryIndex, prevEntryIndex + 1)
+    newEntries.splice(prevEntryIndex, 1)
     updateEntries(newEntries)
   }
 
-  const runEntry = async (entry: RsyncEntry, pushResultView: boolean = true) => {
+  const runEntry = async (entry: RsyncEntry, pushResultView = true) => {
     setEntryRunning(true)
 
     let execResult: DoExecResult
     try {
-      execResult = await doExec(entry.getCommand())
+      const command = entry.getCommand()
+
+      // execResult = await doExec(command)
+      // if (pushResultView) {
+      //   push(<Result execResult={execResult} />)
+      // }
     } catch (err: any) {
-      execResult = err
+      await showToast({
+        style: Toast.Style.Failure,
+        title: 'Command Error',
+        message: err,
+      })
+      // if (typeof err === 'string')
+      //   execResult = {
+      //     success: false,
+      //     result: err,
+      //   }
+      // else execResult = err
     }
 
     setEntryRunning(false)
-    if (pushResultView) {
-      push(<Result execResult={execResult} />)
-    }
-    return execResult
+    // if (pushResultView) {
+    //   push(<Result execResult={execResult} />)
+    // }
+    // return execResult
   }
 
   return { entries, addEntry, updateEntry, deleteEntry, runEntry, entryRunning }

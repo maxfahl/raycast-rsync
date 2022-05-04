@@ -18,14 +18,13 @@ export default class RsyncLocation {
     }
   }
 
-  getCommandPart(includeRemote: boolean): string {
+  getCommandPart(identifier: string, includeRemote: boolean): string {
     const userName = this.userName.trim()
     const hostName = this.hostName.trim()
     const path = this.path.trim()
 
-    if (!path) throw 'Missing path for source or destination'
-
-    if (userName && !hostName) throw 'Missing host name'
+    if (!path) throw `Path is missing for ${identifier}`
+    if (userName && !hostName) throw `Host name is missing for ${identifier}`
 
     return userName && includeRemote ? `${userName}@${hostName}:${path}` : path
   }
