@@ -1,63 +1,95 @@
 import { FC, useEffect, useState } from 'react'
-import { Action, ActionPanel, Detail, useNavigation } from '@raycast/api'
+import { Action, ActionPanel, Detail, showToast, Toast, useNavigation } from '@raycast/api'
 import useSystem from '../hooks/use-system'
+
+const inProgressMessage = 'Synchronizing files'
+const successMessage = 'Files synchronized successfully'
+const errorMessage = 'Failed syncing files'
 
 type ResultProps = {
   command: string
 }
 
 const CommandRunner: FC<ResultProps> = ({ command }) => {
-  const [retryCount, setRetryCount] = useState<number>(1)
+  const [runCount, setRunCount] = useState<number>(0)
+  const [retryCount, setRetryCount] = useState<number>(0)
   const [processOut, setProcessOut] = useState<string>('')
   const [processExit, setProcessExit] = useState<number | undefined>()
 
   const { pop } = useNavigation()
   const { exec } = useSystem()
 
+  const commandFinished = processExit !== undefined
+  const commandSucceeded = commandFinished && processExit === 0
+  const retryText = retryCount > 0 ? ` (retry #${retryCount})` : ''
+  const outputHeader = !commandFinished
+    ? `**${inProgressMessage}**${retryText}`
+    : commandSucceeded
+    ? `**${successMessage}**`
+    : `**${errorMessage}**${retryText}`
+  const output = `${outputHeader}\n${processOut}`
+
   useEffect(
     function () {
-      if (retryCount > 1) console.log('***Retrying***')
-      setProcessOut(retryCount > 1 ? '***Retrying...***\n' : '')
-
       const process = exec(command)
 
-      process.stdout?.on('data', data => {
+      const onStdOutData = (data: string) => {
         setProcessOut(prev => `${prev}\n${data}`)
-      })
-
-      process.stderr?.on('data', data => {
+      }
+      const onStdErrData = (data: string) => {
         setProcessOut(prev => `${prev}\n${data}`)
-      })
+      }
+      const onExit = (code: number) => {
+        setProcessExit(code)
+        process.stdout?.off('data', onStdOutData)
+        process.stderr?.off('data', onStdErrData)
+        process.off('exit', onExit)
+      }
 
-      process.on('exit', (code, signal) => {
-        console.log('Process exited with code:', code, 'and signal:', signal)
-        setProcessExit(code as number)
-      })
+      process.stdout?.on('data', onStdOutData)
+      process.stderr?.on('data', onStdErrData)
+      process.on('exit', onExit)
     },
-    [command, exec, retryCount]
+    [command, exec, runCount]
   )
 
   const retry = () => {
-    setRetryCount(prev => prev + 1)
+    setRetryCount(prev => (commandSucceeded ? 0 : prev + 1))
+    setRunCount(prev => prev + 1)
+    setProcessExit(undefined)
+    setProcessOut('')
   }
 
-  let md = processOut
-  if (processExit !== undefined) {
-    md += `\n${processExit === 0 ? '***Operation completed***' : '**Operation failed**'}`
-  }
+  useEffect(
+    function () {
+      const doShowToast = async () => {
+        await showToast({
+          style: commandSucceeded ? Toast.Style.Success : Toast.Style.Failure,
+          title: commandSucceeded ? 'Done' : 'Error',
+          message: commandSucceeded ? successMessage : errorMessage,
+        })
+      }
+      if (processExit !== undefined) doShowToast()
+    },
+    [processExit, commandSucceeded]
+  )
 
-  const commandFailed = processExit !== undefined && processExit !== 0
+  const retryComponent = (
+    <Action title={commandSucceeded ? 'Go again' : 'Retry'} onAction={() => retry()} />
+  )
   return (
     <Detail
-      isLoading={processExit === undefined}
-      markdown={md}
+      isLoading={!commandFinished}
+      markdown={output}
       actions={
         <ActionPanel>
-          {commandFailed ? (
-            <Action title="Retry" onAction={() => retry()} />
-          ) : (
-            <Action title="Done" onAction={() => pop()} />
+          {commandFinished && !commandSucceeded && retryComponent}
+          {commandFinished && (
+            <>
+              <Action title="Done" onAction={() => pop()} />
+            </>
           )}
+          {commandFinished && commandSucceeded && retryComponent}
         </ActionPanel>
       }
     />
