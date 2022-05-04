@@ -13,19 +13,26 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
   const [entry, setEntry] = useState<RsyncEntry>(source || new RsyncEntry())
   const [optionFilter, setOptionFilter] = useState<string>('')
   const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>([])
-  const [command, setCommand] = useState<string>('')
-  const [error, setError] = useState<string>('')
+  // const [command, setCommand] = useState<string>('')
+  // const [error, setError] = useState<string>('')
 
   const { pop } = useNavigation()
-  const { addEntry, updateEntry } = useEntries()
+  const { addEntry, updateEntry, deleteEntry } = useEntries()
   const { runEntry, entryRunning } = useEntries()
 
+  const update = source && source.id
+
   const saveEntry = async () => {
-    if (source) {
+    if (update) {
       await updateEntry(entry)
     } else {
       await addEntry(entry)
     }
+    pop()
+  }
+
+  const removeEntry = () => {
+    deleteEntry(entry)
     pop()
   }
 
@@ -127,29 +134,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
     [optionFilter]
   )
 
-  useEffect(
-    function () {
-      try {
-        const command = entry.getCommand()
-        console.log('command', command)
-        setCommand(command)
-      } catch (error: any) {
-        console.log('error', error)
-        setError(error)
-      }
-    },
-    [entry]
-  )
-
-  // Debug help
-  // useEffect(
-  //   function () {
-  //     console.log('Entry Changed:', JSON.stringify(entry))
-  //   },
-  //   [entry]
-  // )
-
-  const cta = source ? 'Update Entry' : 'Create Entry'
+  const cta = update ? 'Update Entry' : 'Create Entry'
   return (
     <Form
       isLoading={entryRunning}
@@ -158,6 +143,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
         <ActionPanel>
           <Action.SubmitForm title={cta} onSubmit={saveEntry} />
           <Action title={'Execute Command'} onAction={() => runEntry(entry)} />
+          {source && <Action title={'Delete'} onAction={() => removeEntry()} />}
         </ActionPanel>
       }
     >
@@ -175,6 +161,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
         id="description"
         title="Description"
         defaultValue={getDefaultValue('description')}
+        onChange={setValue.bind(this, 'description')}
       />
 
       <Form.Dropdown

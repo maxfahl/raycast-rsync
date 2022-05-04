@@ -1,4 +1,5 @@
-import { exec } from 'child_process'
+import { ChildProcess, exec as nodeExec } from 'child_process'
+import { useCallback } from 'react'
 
 export type DoExecResult = {
   success: boolean
@@ -6,13 +7,14 @@ export type DoExecResult = {
 }
 
 type UseSystemOutput = {
-  doExec: (command: string) => Promise<DoExecResult>
+  execSync: (command: string) => Promise<DoExecResult>
+  exec: (command: string) => ChildProcess
 }
 
 const useSystem = (): UseSystemOutput => {
-  const doExec = (command: string) => {
+  const execSync = useCallback((command: string) => {
     return new Promise<DoExecResult>(resolve => {
-      exec(command, (error, stdout) => {
+      nodeExec(command, (error, stdout) => {
         if (error) {
           resolve({
             success: false,
@@ -26,9 +28,13 @@ const useSystem = (): UseSystemOutput => {
         }
       })
     })
-  }
+  }, [])
 
-  return { doExec }
+  const exec = useCallback((command: string) => {
+    return nodeExec(command)
+  }, [])
+
+  return { execSync, exec }
 }
 
 export default useSystem

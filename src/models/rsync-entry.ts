@@ -10,8 +10,9 @@ export type RsyncOption = {
 type Options = { [key: string]: RsyncOption }
 
 export default class RsyncEntry {
-  public id: string
+  public id: string | undefined
   public name: string
+  public description: string
   public source: RsyncLocation
   public destination: RsyncLocation
   public options: Options
@@ -21,13 +22,15 @@ export default class RsyncEntry {
     if (rawData) {
       this.id = rawData.id
       this.name = rawData.name
+      this.description = rawData.description
       this.source = new RsyncLocation(rawData.source)
       this.destination = new RsyncLocation(rawData.destination)
       this.options = rawData.options
       this.sshSelection = rawData.sshSelection
     } else {
-      this.id = uuidv4()
+      this.id = undefined
       this.name = ''
+      this.description = ''
       this.source = new RsyncLocation()
       this.destination = new RsyncLocation()
       this.options = {}
@@ -35,7 +38,6 @@ export default class RsyncEntry {
     }
   }
 
-  //rsync -av -e "ssh -p 2222" /Users/maxfahl/Desktop/Current/RECOLAB/UPDATE/PIXILAN-UPDATE.jar pixi-server@blocks.recolab.se:/home/pixi-server --progress
   getCommand(): string {
     const cmd = ['rsync']
 
@@ -67,6 +69,7 @@ export default class RsyncEntry {
     return {
       id: this.id,
       name: this.name,
+      description: this.description,
       source: this.source.toRawData(),
       destination: this.destination.toRawData(),
       options: this.options,
@@ -74,14 +77,17 @@ export default class RsyncEntry {
     }
   }
 
-  clone(): RsyncEntry {
-    return new RsyncEntry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
+  clone(resetId = false): RsyncEntry {
+    const clone = new RsyncEntry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
+    if (resetId) clone.id = uuidv4()
+    return clone
   }
 }
 
 export type RsyncEntryRaw = {
-  id: string
+  id: string | undefined
   name: string
+  description: string
   source: RsyncLocationRaw
   destination: RsyncLocationRaw
   options: Options

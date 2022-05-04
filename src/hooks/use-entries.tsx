@@ -3,8 +3,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { LocalStorage, useNavigation } from '@raycast/api'
 import useEntryStore from '../store'
 import useSystem, { DoExecResult } from './use-system'
-import Result from '../views/result'
+import ExecResult from '../views/exec-result'
 import { showToast, Toast } from '@raycast/api'
+import CommandRunner from '../views/command-runner'
+import { v4 as uuidv4 } from 'uuid'
 
 type UseEntriesOutput = {
   entries: RsyncEntry[]
@@ -19,7 +21,6 @@ const useEntries = (): UseEntriesOutput => {
   const [entries, setEntries] = useEntryStore(state => [state.entries, state.setEntries])
   const [entryRunning, setEntryRunning] = useState<boolean>(false) // If a rsync command is running
 
-  const { doExec } = useSystem()
   const { push } = useNavigation()
 
   const storeEntries = (entries: RsyncEntry[]) => {
@@ -50,6 +51,7 @@ const useEntries = (): UseEntriesOutput => {
   )
 
   const addEntry = (entry: RsyncEntry) => {
+    entry.id = uuidv4()
     const newEntries: RsyncEntry[] = [...entries, entry]
     updateEntries(newEntries)
   }
@@ -73,33 +75,21 @@ const useEntries = (): UseEntriesOutput => {
   const runEntry = async (entry: RsyncEntry, pushResultView = true) => {
     setEntryRunning(true)
 
-    let execResult: DoExecResult
     try {
       const command = entry.getCommand()
-
-      // execResult = await doExec(command)
-      // if (pushResultView) {
-      //   push(<Result execResult={execResult} />)
-      // }
+      // execResult = await execSync(command)
+      if (pushResultView) {
+        push(<CommandRunner command={command} />)
+      }
     } catch (err: any) {
       await showToast({
         style: Toast.Style.Failure,
         title: 'Command Error',
         message: err,
       })
-      // if (typeof err === 'string')
-      //   execResult = {
-      //     success: false,
-      //     result: err,
-      //   }
-      // else execResult = err
     }
 
     setEntryRunning(false)
-    // if (pushResultView) {
-    //   push(<Result execResult={execResult} />)
-    // }
-    // return execResult
   }
 
   return { entries, addEntry, updateEntry, deleteEntry, runEntry, entryRunning }

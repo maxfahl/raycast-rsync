@@ -6,7 +6,7 @@ type ResultProps = {
   execResult: DoExecResult
 }
 
-const Result: FC<ResultProps> = ({ execResult }) => {
+const ExecResult: FC<ResultProps> = ({ execResult }) => {
   const md = `***${execResult.success ? 'Success' : 'Error'}***
 
   ${execResult.result}
@@ -28,4 +28,4 @@ const Result: FC<ResultProps> = ({ execResult }) => {
   // )
 }
 
-export default Result
+export default ExecResult
