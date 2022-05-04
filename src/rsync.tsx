@@ -1,13 +1,13 @@
 import { Action, ActionPanel, Icon, List } from '@raycast/api'
 import EntryForm from './views/entry-form'
-import RsyncEntry, { RsyncEntryRaw } from './models/rsync-entry'
+import RsyncEntry from './models/rsync-entry'
 import useEntries from './hooks/use-entries'
-
-export type RsyncStorageValues = {
-  entries: RsyncEntryRaw[]
-}
+import { useEffect, useState } from 'react'
 
 const Rsync = () => {
+  const [entryFilter, setEntryFilter] = useState<string>('')
+  const [filteredEntries, setFilteredEntries] = useState<RsyncEntry[]>([])
+
   const { entries, deleteEntry, runEntry, entryRunning } = useEntries()
 
   const duplicateEntry = (entry: RsyncEntry) => {
@@ -26,11 +26,21 @@ const Rsync = () => {
     }
   }
 
+  useEffect(
+    function () {
+      const filterStr = entryFilter.trim()
+      setFilteredEntries(
+        entryFilter ? entries.filter(e => e.name.toLowerCase().includes(filterStr)) : entries
+      )
+    },
+    [entries, entryFilter]
+  )
+
   return (
     <List
       isLoading={entryRunning}
       enableFiltering={false}
-      // onSearchTextChange={ setSearchText }
+      onSearchTextChange={setEntryFilter}
       navigationTitle="rsync"
       searchBarPlaceholder=""
     >
@@ -44,7 +54,7 @@ const Rsync = () => {
         }
       />
       <List.Section title="Saved Entries">
-        {entries.map(entry => (
+        {filteredEntries.map(entry => (
           <List.Item
             key={entry.id}
             title={entry.name}
