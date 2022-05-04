@@ -10,7 +10,6 @@ type EntryFormProps = {
 }
 
 const EntryForm: FC<EntryFormProps> = ({ source }) => {
-  // const [render, setRender] = useState(0)
   const [entry, setEntry] = useState<RsyncEntry>(source || new RsyncEntry())
   const [optionFilter, setOptionFilter] = useState<string>('')
   const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>([])
@@ -19,6 +18,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
 
   const { pop } = useNavigation()
   const { addEntry, updateEntry } = useEntries()
+  const { runEntry, entryRunning } = useEntries()
 
   const saveEntry = async () => {
     if (source) {
@@ -150,19 +150,15 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
     [entry]
   )
 
-  const cta = source ? 'Update entry' : 'Create entry'
+  const cta = source ? 'Update Entry' : 'Create Entry'
   return (
     <Form
+      isLoading={entryRunning}
       navigationTitle={cta}
       actions={
         <ActionPanel>
           <Action.SubmitForm title={cta} onSubmit={saveEntry} />
-          <Action
-            title={'Run'}
-            onAction={() => {
-              console.log('run')
-            }}
-          />
+          <Action title={'Execute Command'} onAction={() => runEntry(entry)} />
         </ActionPanel>
       }
     >

@@ -1,31 +1,25 @@
 import RsyncEntry, { RsyncEntryRaw } from '../models/rsync-entry'
 import { useCallback, useEffect, useState } from 'react'
-import { LocalStorage } from '@raycast/api'
+import { LocalStorage, useNavigation } from '@raycast/api'
 import useEntryStore from '../store'
+import useSystem, { DoExecResult } from './use-system'
+import Result from '../views/result'
 
 type UseEntriesOutput = {
   entries: RsyncEntry[]
+  entryRunning: boolean
   addEntry: (entry: RsyncEntry) => void
   updateEntry: (entry: RsyncEntry) => void
   deleteEntry: (entry: RsyncEntry) => void
+  runEntry: (entry: RsyncEntry) => void
 }
 
 const useEntries = (): UseEntriesOutput => {
-  const [storeInitiated, entries, setEntries] = useEntryStore(state => [
-    state.storeInitiated,
-    state.entries,
-    state.setEntries,
-  ])
-  // const storeInitiated = useEntriesStore(state => state.storeInitiated)
-  // const entries = useEntriesStore(state => state.entries)
-  // const setEntries = useEntriesStore(state => state.setEntries)
+  const [entries, setEntries] = useEntryStore(state => [state.entries, state.setEntries])
+  const [entryRunning, setEntryRunning] = useState<boolean>(false) // If a rsync command is running
 
-  useEffect(
-    function () {
-      console.log('useEntries', entries.length)
-    },
-    [entries]
-  )
+  const { doExec } = useSystem()
+  const { push } = useNavigation()
 
   const storeEntries = (entries: RsyncEntry[]) => {
     LocalStorage.setItem('entries', JSON.stringify(entries.map(e => e.toRawData())))
@@ -46,13 +40,12 @@ const useEntries = (): UseEntriesOutput => {
         const rsyncEntries = entries
           ? JSON.parse(entries).map((e: RsyncEntryRaw) => new RsyncEntry(e))
           : []
-        console.log('loadEntries', rsyncEntries.length)
         setEntries(rsyncEntries)
       }
 
-      if (!storeInitiated) loadEntries()
+      loadEntries()
     },
-    [storeInitiated, setEntries]
+    [setEntries]
   )
 
   const addEntry = (entry: RsyncEntry) => {
@@ -76,7 +69,24 @@ const useEntries = (): UseEntriesOutput => {
     updateEntries(newEntries)
   }
 
-  return { entries, addEntry, updateEntry, deleteEntry }
+  const runEntry = async (entry: RsyncEntry, pushResultView: boolean = true) => {
+    setEntryRunning(true)
+
+    let execResult: DoExecResult
+    try {
+      execResult = await doExec(entry.getCommand())
+    } catch (err: any) {
+      execResult = err
+    }
+
+    setEntryRunning(false)
+    if (pushResultView) {
+      push(<Result execResult={execResult} />)
+    }
+    return execResult
+  }
+
+  return { entries, addEntry, updateEntry, deleteEntry, runEntry, entryRunning }
 }
 
 export default useEntries
