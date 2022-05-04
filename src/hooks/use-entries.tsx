@@ -1,10 +1,7 @@
 import RsyncEntry, { RsyncEntryRaw } from '../models/rsync-entry'
 import { useCallback, useEffect, useState } from 'react'
-import { LocalStorage, useNavigation } from '@raycast/api'
+import { LocalStorage, showToast, Toast, useNavigation } from '@raycast/api'
 import useEntryStore from '../store'
-import useSystem, { DoExecResult } from './use-system'
-import ExecResult from '../views/exec-result'
-import { showToast, Toast } from '@raycast/api'
 import CommandRunner from '../views/command-runner'
 import { v4 as uuidv4 } from 'uuid'
 

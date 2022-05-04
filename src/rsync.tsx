@@ -1,4 +1,4 @@
-import { Action, ActionPanel, List, Icon } from '@raycast/api'
+import { Action, ActionPanel, Icon, List } from '@raycast/api'
 import EntryForm from './views/entry-form'
 import RsyncEntry, { RsyncEntryRaw } from './models/rsync-entry'
 import useEntries from './hooks/use-entries'
@@ -8,18 +8,7 @@ export type RsyncStorageValues = {
 }
 
 const Rsync = () => {
-  const { entries, addEntry, deleteEntry, runEntry, entryRunning } = useEntries()
-
-  // const getEntryCommand = (entry: RsyncEntry) => {
-  //   let command = ''
-  //   try {
-  //     command = entry.getCommand()
-  //   } catch (err: any) {
-  //     command = err
-  //   }
-  //   console.log(command)
-  //   return command
-  // }
+  const { entries, deleteEntry, runEntry, entryRunning } = useEntries()
 
   const duplicateEntry = (entry: RsyncEntry) => {
     const clone = entry.clone(true)
@@ -59,10 +48,7 @@ const Rsync = () => {
           <List.Item
             key={entry.id}
             title={entry.name}
-            // icon={Icon.Terminal}
             accessories={[
-              // { text: `An Accessory Text`, icon: Icon.Hammer },
-              // { text: getEntryCommand(entry) },
               { text: hasErrors(entry) ? '(Contains errors)' : entry.description },
               // { icon: Icon.Terminal },
             ]}
