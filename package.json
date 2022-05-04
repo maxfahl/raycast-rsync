@@ -1,45 +1,45 @@
 {
-  "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "rsync",
-  "title": "rsync",
-  "description": "Save your common RSYNC operations in one place and run the with ease.",
-  "icon": "command-icon.png",
-  "author": "fahl",
-  "categories": [
-    "Productivity"
-  ],
-  "license": "MIT",
-  "commands": [
-    {
-      "name": "rsync",
-      "title": "rsync",
-      "subtitle": "Sync files and folders",
-      "description": "Save your common RSYNC operations in one place and run the with ease.",
-      "mode": "view"
-    }
-  ],
-  "dependencies": {
-    "@raycast/api": "^1.33.2",
-    "sugar": "^2.0.6",
-    "uuid": "^8.3.2",
-    "zustand": "^3.6.0"
-  },
-  "devDependencies": {
-    "@types/node": "~16.10.0",
-    "@types/react": "^17.0.28",
-    "@types/uuid": "^8.3.4",
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "@typescript-eslint/parser": "^5.0.0",
-    "eslint": "^7.32.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-react-hooks": "^4.5.0",
-    "prettier": "^2.5.1",
-    "typescript": "^4.4.3"
-  },
-  "scripts": {
-    "build": "ray build -e dist",
-    "dev": "ray develop",
-    "fix-lint": "ray lint --fix",
-    "lint": "ray lint"
-  }
+	"$schema": "https://www.raycast.com/schemas/extension.json",
+	"name": "rsync",
+	"title": "Rsync Commands",
+	"description": "Save your common RSYNC operations in one place and run the with ease.",
+	"icon": "command-icon.png",
+	"author": "fahl",
+	"categories": [
+		"Productivity",
+		"Developer Tools"
+	],
+	"license": "MIT",
+	"commands": [
+		{
+			"name": "rsync",
+			"title": "Run Rsync Command",
+			"description": "Save your common RSYNC operations in one place and run the with ease.",
+			"mode": "view"
+		}
+	],
+	"dependencies": {
+		"@raycast/api": "^1.33.2",
+		"sugar": "^2.0.6",
+		"uuid": "^8.3.2",
+		"zustand": "^3.6.0"
+	},
+	"devDependencies": {
+		"@types/node": "~16.10.0",
+		"@types/react": "^17.0.28",
+		"@types/uuid": "^8.3.4",
+		"@typescript-eslint/eslint-plugin": "^5.0.0",
+		"@typescript-eslint/parser": "^5.0.0",
+		"eslint": "^7.32.0",
+		"eslint-config-prettier": "^8.3.0",
+		"eslint-plugin-react-hooks": "^4.5.0",
+		"prettier": "^2.5.1",
+		"typescript": "^4.4.3"
+	},
+	"scripts": {
+		"build": "ray build -e dist",
+		"dev": "ray develop",
+		"fix-lint": "ray lint --fix",
+		"lint": "ray lint"
+	}
 }
