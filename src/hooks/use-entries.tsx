@@ -1,5 +1,5 @@
-import RsyncEntry, { RsyncEntryRaw } from '../models/rsync-entry'
-import { useCallback, useEffect, useState } from 'react'
+import RsyncEntry, { RsyncEntryRaw } from "../models/rsync-entry"
+import { useCallback, useEffect, useState } from "react"
 import {
   LocalStorage,
   showToast,
@@ -9,11 +9,11 @@ import {
   confirmAlert,
   Alert,
   getPreferenceValues,
-} from '@raycast/api'
-import { useEntryStore, useNavigationStore } from '../store'
-import CommandRunner from '../views/command-runner'
-import { v4 as uuidv4 } from 'uuid'
-import type { Preferences } from '../rsync-commands'
+} from "@raycast/api"
+import { useEntryStore, useNavigationStore } from "../store"
+import CommandRunner from "../views/command-runner"
+import { v4 as uuidv4 } from "uuid"
+import type { Preferences } from "../rsync-commands"
 
 type UseEntriesOutput = {
   entries: RsyncEntry[]
@@ -34,7 +34,7 @@ const useEntries = (): UseEntriesOutput => {
   const preferences = getPreferenceValues<Preferences>()
 
   const storeEntries = (entries: RsyncEntry[]) => {
-    LocalStorage.setItem('entries', JSON.stringify(entries.map(e => e.toRawData())))
+    LocalStorage.setItem("entries", JSON.stringify(entries.map(e => e.toRawData())))
   }
 
   const updateEntries = useCallback(
@@ -48,10 +48,8 @@ const useEntries = (): UseEntriesOutput => {
   useEffect(
     function () {
       const loadEntries = async () => {
-        const entries = await LocalStorage.getItem<string>('entries')
-        const rsyncEntries = entries
-          ? JSON.parse(entries).map((e: RsyncEntryRaw) => new RsyncEntry(e))
-          : []
+        const entries = await LocalStorage.getItem<string>("entries")
+        const rsyncEntries = entries ? JSON.parse(entries).map((e: RsyncEntryRaw) => new RsyncEntry(e)) : []
         setEntries(rsyncEntries)
       }
 
@@ -67,32 +65,32 @@ const useEntries = (): UseEntriesOutput => {
     setCreatedEntry(entry.id)
     await showToast({
       style: Toast.Style.Success,
-      title: 'Entry created',
+      title: "Entry created",
     })
   }
 
   const updateEntry = async (entry: RsyncEntry, resetConfirmed = true) => {
     if (resetConfirmed) entry.confirmed = false
     const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
-    if (prevEntryIndex === -1) throw 'Could not find entry to update'
+    if (prevEntryIndex === -1) throw "Could not find entry to update"
     const newEntries = [...entries]
     newEntries.splice(prevEntryIndex, 1, entry)
     updateEntries(newEntries)
     await showToast({
       style: Toast.Style.Success,
-      title: 'Entry updated',
+      title: "Entry updated",
     })
   }
 
   const deleteEntry = async (entry: RsyncEntry) => {
     const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
-    if (prevEntryIndex === -1) throw 'Could not find entry to update'
+    if (prevEntryIndex === -1) throw "Could not find entry to update"
     const newEntries = [...entries]
     newEntries.splice(prevEntryIndex, 1)
     updateEntries(newEntries)
     await showToast({
       style: Toast.Style.Success,
-      title: 'Entry deleted',
+      title: "Entry deleted",
     })
   }
 
@@ -103,7 +101,7 @@ const useEntries = (): UseEntriesOutput => {
     } catch (err: any) {
       await showToast({
         style: Toast.Style.Failure,
-        title: 'Command Error',
+        title: "Command Error",
         message: err,
       })
     }
@@ -116,10 +114,10 @@ const useEntries = (): UseEntriesOutput => {
 
     if (!preferences.noVerifyCommands && !entry.confirmed) {
       const confirmResponse = await confirmAlert({
-        title: 'Are you sure about this?',
+        title: "Are you sure about this?",
         message: `Rsync can be a destructive command. You have to confirm a command before running it the first time after creation, as well as after each update.`,
         primaryAction: {
-          title: 'Execute',
+          title: "Execute",
           style: Alert.ActionStyle.Destructive,
         },
       })
@@ -144,7 +142,7 @@ const useEntries = (): UseEntriesOutput => {
       await Clipboard.copy(command)
       await showToast({
         style: Toast.Style.Success,
-        title: 'Copied Command to Clipboard',
+        title: "Copied Command to Clipboard",
       })
     }
   }

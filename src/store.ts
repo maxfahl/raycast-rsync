@@ -1,5 +1,5 @@
-import create from 'zustand'
-import RsyncEntry from './models/rsync-entry'
+import create from "zustand"
+import RsyncEntry from "./models/rsync-entry"
 
 interface NavigationStore {
   createdEntry: string | undefined

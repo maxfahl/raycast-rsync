@@ -1,10 +1,10 @@
-import { FC, useEffect, useState } from 'react'
-import { Action, ActionPanel, Detail, showToast, Toast, useNavigation } from '@raycast/api'
-import useSystem from '../hooks/use-system'
+import { FC, useEffect, useState } from "react"
+import { Action, ActionPanel, Detail, showToast, Toast, useNavigation } from "@raycast/api"
+import useSystem from "../hooks/use-system"
 
-const inProgressMessage = 'Synchronizing files...'
-const successMessage = 'Files synchronized successfully'
-const errorMessage = 'Failed synchronizing files'
+const inProgressMessage = "Synchronizing files..."
+const successMessage = "Files synchronized successfully"
+const errorMessage = "Failed synchronizing files"
 
 type ResultProps = {
   command: string
@@ -13,7 +13,7 @@ type ResultProps = {
 const CommandRunner: FC<ResultProps> = ({ command }) => {
   const [runCount, setRunCount] = useState<number>(0)
   const [retryCount, setRetryCount] = useState<number>(0)
-  const [processOut, setProcessOut] = useState<string>('')
+  const [processOut, setProcessOut] = useState<string>("")
   const [processExit, setProcessExit] = useState<number | undefined>()
 
   const { pop } = useNavigation()
@@ -21,7 +21,7 @@ const CommandRunner: FC<ResultProps> = ({ command }) => {
 
   const commandFinished = processExit !== undefined
   const commandSucceeded = commandFinished && processExit === 0
-  const retryText = retryCount > 0 ? ` (retry #${retryCount})` : ''
+  const retryText = retryCount > 0 ? ` (retry #${retryCount})` : ""
   const outputHeader = !commandFinished
     ? `# ${inProgressMessage}${retryText}`
     : commandSucceeded
@@ -41,14 +41,14 @@ const CommandRunner: FC<ResultProps> = ({ command }) => {
       }
       const onExit = (code: number) => {
         setProcessExit(code)
-        process.stdout?.off('data', onStdOutData)
-        process.stderr?.off('data', onStdErrData)
-        process.off('exit', onExit)
+        process.stdout?.off("data", onStdOutData)
+        process.stderr?.off("data", onStdErrData)
+        process.off("exit", onExit)
       }
 
-      process.stdout?.on('data', onStdOutData)
-      process.stderr?.on('data', onStdErrData)
-      process.on('exit', onExit)
+      process.stdout?.on("data", onStdOutData)
+      process.stderr?.on("data", onStdErrData)
+      process.on("exit", onExit)
     },
     [command, exec, runCount]
   )
@@ -57,7 +57,7 @@ const CommandRunner: FC<ResultProps> = ({ command }) => {
     setRetryCount(prev => (commandSucceeded ? 0 : prev + 1))
     setRunCount(prev => prev + 1)
     setProcessExit(undefined)
-    setProcessOut('')
+    setProcessOut("")
   }
 
   useEffect(
@@ -65,7 +65,7 @@ const CommandRunner: FC<ResultProps> = ({ command }) => {
       const doShowToast = async () => {
         await showToast({
           style: commandSucceeded ? Toast.Style.Success : Toast.Style.Failure,
-          title: commandSucceeded ? 'Success' : 'Error',
+          title: commandSucceeded ? "Success" : "Error",
           message: commandSucceeded ? successMessage : errorMessage,
         })
       }
@@ -74,9 +74,7 @@ const CommandRunner: FC<ResultProps> = ({ command }) => {
     [processExit, commandSucceeded]
   )
 
-  const retryComponent = (
-    <Action title={commandSucceeded ? 'Go again' : 'Retry'} onAction={() => retry()} />
-  )
+  const retryComponent = <Action title={commandSucceeded ? "Go again" : "Retry"} onAction={() => retry()} />
   return (
     <Detail
       isLoading={!commandFinished}

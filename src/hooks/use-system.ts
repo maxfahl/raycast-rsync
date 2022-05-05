@@ -1,5 +1,5 @@
-import { ChildProcess, exec as nodeExec } from 'child_process'
-import { useCallback } from 'react'
+import { ChildProcess, exec as nodeExec } from "child_process"
+import { useCallback } from "react"
 
 export type DoExecResult = {
   success: boolean

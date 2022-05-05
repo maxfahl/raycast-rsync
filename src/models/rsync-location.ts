@@ -11,10 +11,10 @@ export default class RsyncLocation {
       this.port = rawData.port
       this.path = rawData.path
     } else {
-      this.userName = ''
-      this.hostName = ''
-      this.port = '22'
-      this.path = ''
+      this.userName = ""
+      this.hostName = ""
+      this.port = "22"
+      this.path = ""
     }
   }
 

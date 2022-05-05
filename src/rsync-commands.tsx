@@ -1,22 +1,21 @@
-import { Action, ActionPanel, Icon, List } from '@raycast/api'
-import EntryForm from './views/entry-form'
-import RsyncEntry from './models/rsync-entry'
-import useEntries from './hooks/use-entries'
-import { useCallback, useEffect, useState } from 'react'
-import { useNavigationStore } from './store'
+import { Action, ActionPanel, Icon, List } from "@raycast/api"
+import EntryForm from "./views/entry-form"
+import RsyncEntry from "./models/rsync-entry"
+import useEntries from "./hooks/use-entries"
+import { useCallback, useEffect, useState } from "react"
+import { useNavigationStore } from "./store"
 
 export type Preferences = {
   noVerifyCommands: boolean
 }
 
 const RsyncCommands = () => {
-  const [entryFilter, setEntryFilter] = useState<string>('')
+  const [entryFilter, setEntryFilter] = useState<string>("")
   const [pinnedEntries, setPinnedEntries] = useState<RsyncEntry[]>([])
   const [otherEntries, setOtherEntries] = useState<RsyncEntry[]>([])
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(undefined)
 
-  const { entries, deleteEntry, updateEntry, runEntry, copyEntryCommand, entryRunning } =
-    useEntries()
+  const { entries, deleteEntry, updateEntry, runEntry, copyEntryCommand, entryRunning } = useEntries()
   const createdEntry = useNavigationStore(state => state.createdEntry)
 
   const toggleEntryPin = useCallback(
@@ -60,22 +59,22 @@ const RsyncCommands = () => {
               <Action.Push title="Edit" target={<EntryForm source={entry} />} />
               <Action
                 title="Delete"
-                shortcut={{ modifiers: ['cmd'], key: 'backspace' }}
+                shortcut={{ modifiers: ["cmd"], key: "backspace" }}
                 onAction={() => deleteEntry(entry)}
               />
               <Action.Push
                 title="Duplicate"
-                shortcut={{ modifiers: ['cmd'], key: 'd' }}
+                shortcut={{ modifiers: ["cmd"], key: "d" }}
                 target={<EntryForm source={duplicateEntry(entry)} />}
               />
               <Action
                 title="Copy to Clipboard"
-                shortcut={{ modifiers: ['cmd'], key: 'c' }}
+                shortcut={{ modifiers: ["cmd"], key: "c" }}
                 onAction={() => copyEntryCommand(entry)}
               />
               <Action
-                title={entry.pinned ? 'Unpin' : 'Pin'}
-                shortcut={{ modifiers: ['cmd'], key: 'p' }}
+                title={entry.pinned ? "Unpin" : "Pin"}
+                shortcut={{ modifiers: ["cmd"], key: "p" }}
                 onAction={() => toggleEntryPin(entry)}
               />
             </ActionPanel>

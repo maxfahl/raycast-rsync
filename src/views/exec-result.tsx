@@ -1,13 +1,13 @@
-import { FC } from 'react'
-import { Detail } from '@raycast/api'
-import { DoExecResult } from '../hooks/use-system'
+import { FC } from "react"
+import { Detail } from "@raycast/api"
+import { DoExecResult } from "../hooks/use-system"
 
 type ResultProps = {
   execResult: DoExecResult
 }
 
 const ExecResult: FC<ResultProps> = ({ execResult }) => {
-  const md = `***${execResult.success ? 'Success' : 'Error'}***
+  const md = `***${execResult.success ? "Success" : "Error"}***
 
   ${execResult.result}
   `

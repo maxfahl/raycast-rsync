@@ -1,9 +1,9 @@
-import { Action, ActionPanel, Form, useNavigation } from '@raycast/api'
-import { FC, Fragment, useCallback, useEffect, useState } from 'react'
-import RsyncEntry, { RsyncOption } from '../models/rsync-entry'
-import rsyncOptions, { RsyncDataOption } from '../data/rsync-options'
-import Sugar from 'sugar'
-import useEntries from '../hooks/use-entries'
+import { Action, ActionPanel, Form, useNavigation } from "@raycast/api"
+import { FC, Fragment, useCallback, useEffect, useState } from "react"
+import RsyncEntry, { RsyncOption } from "../models/rsync-entry"
+import rsyncOptions, { RsyncDataOption } from "../data/rsync-options"
+import Sugar from "sugar"
+import useEntries from "../hooks/use-entries"
 
 type EntryFormProps = {
   source?: RsyncEntry
@@ -11,12 +11,11 @@ type EntryFormProps = {
 
 const EntryForm: FC<EntryFormProps> = ({ source }) => {
   const [entry, setEntry] = useState<RsyncEntry>(source || new RsyncEntry())
-  const [optionFilter, setOptionFilter] = useState<string>('')
+  const [optionFilter, setOptionFilter] = useState<string>("")
   const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>([])
 
   const { pop } = useNavigation()
-  const { addEntry, updateEntry, deleteEntry, runEntry, copyEntryCommand, entryRunning } =
-    useEntries()
+  const { addEntry, updateEntry, deleteEntry, runEntry, copyEntryCommand, entryRunning } = useEntries()
 
   const update = source && source.id
 
@@ -81,7 +80,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
             <Form.TextField
               id={`option-${option.name}-value`}
               placeholder={option.param}
-              defaultValue={entry.options[option.name]?.value ?? ''}
+              defaultValue={entry.options[option.name]?.value ?? ""}
               onChange={setValue.bind(this, `options[${option.name}].value`)}
             />
           )}
@@ -92,7 +91,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
   )
 
   const getSshFields = useCallback(
-    (location: 'source' | 'destination') => {
+    (location: "source" | "destination") => {
       // console.log(`${location} ${entry.sshSelection === location ? 'true' : 'false'}`)
 
       return entry.sshSelection === location ? (
@@ -133,7 +132,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
     [optionFilter]
   )
 
-  const cta = update ? 'Update' : 'Create'
+  const cta = update ? "Update" : "Create"
   return (
     <Form
       isLoading={entryRunning}
@@ -141,13 +140,13 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
       actions={
         <ActionPanel>
           <Action.SubmitForm title={cta} onSubmit={saveEntry} />
-          <Action title={'Run'} onAction={() => runEntry(entry)} />
+          <Action title={"Run"} onAction={() => runEntry(entry)} />
           <Action
             title="Copy to Clipboard"
-            shortcut={{ modifiers: ['cmd'], key: 'c' }}
+            shortcut={{ modifiers: ["cmd"], key: "c" }}
             onAction={() => copyEntryCommand(entry)}
           />
-          {source && <Action title={'Delete'} onAction={() => removeEntry()} />}
+          {source && <Action title={"Delete"} onAction={() => removeEntry()} />}
         </ActionPanel>
       }
     >
@@ -156,52 +155,51 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
       <Form.TextField
         id="name"
         title="Name"
-        placeholder={'Website Backup, Sync Photo Collection...'}
+        placeholder={"Website Backup, Sync Photo Collection..."}
         autoFocus={false}
-        defaultValue={getDefaultValue('name')}
-        onChange={setValue.bind(this, 'name')}
+        defaultValue={getDefaultValue("name")}
+        onChange={setValue.bind(this, "name")}
       />
       <Form.TextArea
         id="description"
         title="Description"
-        defaultValue={getDefaultValue('description')}
-        onChange={setValue.bind(this, 'description')}
+        defaultValue={getDefaultValue("description")}
+        onChange={setValue.bind(this, "description")}
       />
 
       <Form.Dropdown
         id="sshSelection"
         title="SSH"
-        defaultValue={getDefaultValue('sshSelection')}
-        onChange={setValue.bind(this, 'sshSelection')}
+        defaultValue={getDefaultValue("sshSelection")}
+        onChange={setValue.bind(this, "sshSelection")}
       >
         <Form.Dropdown.Item value="none" title="None" />
         <Form.Dropdown.Item value="source" title="Source" />
         <Form.Dropdown.Item value="destination" title="Destination" />
       </Form.Dropdown>
-      <Form.Description text={entry.sshSelection} />
 
       <Form.Separator />
       <Form.Description text="Source" />
 
-      {getSshFields('source')}
+      {getSshFields("source")}
       <Form.TextField
         id="sourcePath"
         title="Path"
-        placeholder={'/path/to/source/file/or/folder'}
-        defaultValue={getDefaultValue('source.path')}
-        onChange={setValue.bind(this, 'source.path')}
+        placeholder={"/path/to/source/file/or/folder"}
+        defaultValue={getDefaultValue("source.path")}
+        onChange={setValue.bind(this, "source.path")}
       />
 
       <Form.Separator />
       <Form.Description text="Destination" />
 
-      {getSshFields('destination')}
+      {getSshFields("destination")}
       <Form.TextField
         id="destinationPath"
         title="Path"
-        placeholder={'/path/to/destination/file/or/folder'}
-        defaultValue={getDefaultValue('destination.path')}
-        onChange={setValue.bind(this, 'destination.path')}
+        placeholder={"/path/to/destination/file/or/folder"}
+        defaultValue={getDefaultValue("destination.path")}
+        onChange={setValue.bind(this, "destination.path")}
       />
 
       <Form.Separator />
