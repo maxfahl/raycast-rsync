@@ -1,8 +1,8 @@
 {
 	"$schema": "https://www.raycast.com/schemas/extension.json",
-	"name": "rsync",
+	"name": "rsync-commands",
 	"title": "Rsync Commands",
-	"description": "Save your common RSYNC operations in one place and run the with ease.",
+	"description": "Save your commonly used rsync commands in one place and run them with ease.",
 	"icon": "command-icon.png",
 	"author": "fahl",
 	"categories": [
@@ -12,10 +12,20 @@
 	"license": "MIT",
 	"commands": [
 		{
-			"name": "rsync",
-			"title": "Run Rsync Command",
-			"description": "Save your common RSYNC operations in one place and run the with ease.",
+			"name": "rsync-commands",
+			"title": "Rsync Commands",
+			"description": "Run and edit your commonly used rsync commands.",
 			"mode": "view"
+		}
+	],
+	"preferences": [
+		{
+			"name": "noVerifyCommands",
+			"label": "Skip verification",
+			"description": "Skip verfification of new or updated commands",
+			"type": "checkbox",
+			"required": false,
+			"default": false
 		}
 	],
 	"dependencies": {

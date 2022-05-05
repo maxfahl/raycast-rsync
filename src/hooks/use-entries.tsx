@@ -8,10 +8,12 @@ import {
   useNavigation,
   confirmAlert,
   Alert,
+  getPreferenceValues,
 } from '@raycast/api'
 import { useEntryStore, useNavigationStore } from '../store'
 import CommandRunner from '../views/command-runner'
 import { v4 as uuidv4 } from 'uuid'
+import type { Preferences } from '../rsync-commands'
 
 type UseEntriesOutput = {
   entries: RsyncEntry[]
@@ -29,6 +31,7 @@ const useEntries = (): UseEntriesOutput => {
   const { push } = useNavigation()
   const [entries, setEntries] = useEntryStore(state => [state.entries, state.setEntries])
   const setCreatedEntry = useNavigationStore(state => state.setCreatedEntry)
+  const preferences = getPreferenceValues<Preferences>()
 
   const storeEntries = (entries: RsyncEntry[]) => {
     LocalStorage.setItem('entries', JSON.stringify(entries.map(e => e.toRawData())))
@@ -68,11 +71,11 @@ const useEntries = (): UseEntriesOutput => {
     })
   }
 
-  const updateEntry = async (entry: RsyncEntry) => {
+  const updateEntry = async (entry: RsyncEntry, resetConfirmed = true) => {
+    if (resetConfirmed) entry.confirmed = false
     const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
     if (prevEntryIndex === -1) throw 'Could not find entry to update'
     const newEntries = [...entries]
-    entry.confirmed = false
     newEntries.splice(prevEntryIndex, 1, entry)
     updateEntries(newEntries)
     await showToast({
@@ -108,10 +111,13 @@ const useEntries = (): UseEntriesOutput => {
   }
 
   const runEntry = async (entry: RsyncEntry, pushResultView = true) => {
-    if (!entry.confirmed) {
+    const command = await getEntryCommand(entry)
+    if (!command) return
+
+    if (!preferences.noVerifyCommands && !entry.confirmed) {
       const confirmResponse = await confirmAlert({
         title: 'Are you sure about this?',
-        message: `Rsync can be a destructive command. You have to confirm a command before running it the first time you run it after creation and after each update.`,
+        message: `Rsync can be a destructive command. You have to confirm a command before running it the first time after creation, as well as after each update.`,
         primaryAction: {
           title: 'Execute',
           style: Alert.ActionStyle.Destructive,
@@ -123,9 +129,8 @@ const useEntries = (): UseEntriesOutput => {
     }
 
     entry.confirmed = true
-    updateEntry(entry)
+    await updateEntry(entry, false)
 
-    const command = await getEntryCommand(entry)
     setEntryRunning(true)
     if (command && pushResultView) {
       push(<CommandRunner command={command} />)

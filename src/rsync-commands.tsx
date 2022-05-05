@@ -5,7 +5,11 @@ import useEntries from './hooks/use-entries'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigationStore } from './store'
 
-const Rsync = () => {
+export type Preferences = {
+  noVerifyCommands: boolean
+}
+
+const RsyncCommands = () => {
   const [entryFilter, setEntryFilter] = useState<string>('')
   const [pinnedEntries, setPinnedEntries] = useState<RsyncEntry[]>([])
   const [otherEntries, setOtherEntries] = useState<RsyncEntry[]>([])
@@ -49,10 +53,7 @@ const Rsync = () => {
           id={entry.id}
           key={entry.id}
           title={entry.name}
-          accessories={[
-            { text: hasErrors(entry) ? '(Contains errors)' : entry.description },
-            // { icon: Icon.Terminal },
-          ]}
+          accessories={[{ text: entry.description }, { icon: Icon.Terminal }]}
           actions={
             <ActionPanel>
               <Action title="Run" onAction={() => runEntry(entry)} />
@@ -95,11 +96,11 @@ const Rsync = () => {
   useEffect(
     function () {
       const filterStr = entryFilter.trim()
-      const filteredEntries = entryFilter
-        ? entries.filter(e => e.name.toLowerCase().includes(filterStr))
-        : entries
-      setPinnedEntries(filteredEntries.filter(e => e.pinned))
-      setOtherEntries(filteredEntries.filter(e => !e.pinned))
+      const filteredAndSortedEntries = (
+        entryFilter ? entries.filter(e => e.name.toLowerCase().includes(filterStr)) : entries
+      ).sort((a, b) => a.name.localeCompare(b.name))
+      setPinnedEntries(filteredAndSortedEntries.filter(e => e.pinned))
+      setOtherEntries(filteredAndSortedEntries.filter(e => !e.pinned))
     },
     [entries, entryFilter]
   )
@@ -109,7 +110,7 @@ const Rsync = () => {
       isLoading={entryRunning}
       enableFiltering={false}
       onSearchTextChange={setEntryFilter}
-      navigationTitle="Run Rsync Command"
+      navigationTitle="Rsync Commands"
       searchBarPlaceholder=""
       selectedItemId={selectedItemId}
     >
@@ -129,4 +130,4 @@ const Rsync = () => {
 }
 
 // noinspection JSUnusedGlobalSymbols
-export default Rsync
+export default RsyncCommands

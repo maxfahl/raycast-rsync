@@ -156,7 +156,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
       <Form.TextField
         id="name"
         title="Name"
-        placeholder={'Website backup, photo collection, remote notes...'}
+        placeholder={'Website Backup, Sync Photo Collection...'}
         autoFocus={false}
         defaultValue={getDefaultValue('name')}
         onChange={setValue.bind(this, 'name')}
