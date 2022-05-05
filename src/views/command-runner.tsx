@@ -27,7 +27,8 @@ const CommandRunner: FC<ResultProps> = ({ command }) => {
     : commandSucceeded
     ? `# ${successMessage} ⚡`
     : `# ${errorMessage}${retryText} 💥`
-  const output = `${outputHeader}\n${processOut}`
+  const output = `${outputHeader}\n
+  \n\`\`\`${processOut}\`\`\``
 
   useEffect(
     function () {
