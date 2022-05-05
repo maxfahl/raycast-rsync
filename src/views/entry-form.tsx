@@ -47,7 +47,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
 
   const getOptionFields = useCallback(
     (option: RsyncDataOption) => {
-      const myEntry = entry.options[option.name]
+      const entryOption: RsyncOption | undefined = entry.options[option.name]
 
       return (
         <Fragment key={`option-${option.name}`}>
@@ -57,15 +57,15 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
             defaultValue={entry.options[option.name]?.enabled}
             info={option.description}
             onChange={(enable: boolean) => {
-              const exists = !!myEntry
-              const enabled = myEntry?.enabled
-              const hadValue = myEntry?.value
+              const exists = !!entryOption
+              const enabled = entryOption?.enabled
+              const hadValue = entryOption?.value
 
               if (enable || (!enable && enabled !== undefined)) {
                 if (!enable && !hadValue) {
                   setEntry(prev => {
                     delete prev.options[option.name]
-                    return prev
+                    return prev.clone()
                   })
                 } else if (!!enabled !== enable) {
                   setValue(`options[${option.name}]`, {
@@ -77,8 +77,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
             }}
           />
 
-          {/*{myEntry?.enabled && myEntry?.param && (*/}
-          {!!option.param && (
+          {option.param && entryOption?.enabled && (
             <Form.TextField
               id={`option-${option.name}-value`}
               placeholder={option.param}
@@ -94,6 +93,8 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
 
   const getSshFields = useCallback(
     (location: 'source' | 'destination') => {
+      // console.log(`${location}: ${entry.sshSelection === location ? 'true' : 'false'}`)
+
       return entry.sshSelection === location ? (
         <Fragment key={`location-fields-${location}`}>
           <Form.TextField
@@ -117,7 +118,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
         </Fragment>
       ) : null
     },
-    [getDefaultValue, entry.sshSelection]
+    [getDefaultValue, entry]
   )
 
   useEffect(

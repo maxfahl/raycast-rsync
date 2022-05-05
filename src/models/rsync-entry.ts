@@ -6,6 +6,7 @@ import Sugar from 'sugar'
 export type SshSelection = 'none' | 'source' | 'destination'
 export type RsyncOption = {
   value?: string
+  enabled?: boolean
 } & RsyncDataOption
 type Options = { [key: string]: RsyncOption }
 

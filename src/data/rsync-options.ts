@@ -2,7 +2,6 @@ export type RsyncDataOption = {
   name: string
   description: string
   param?: string
-  enabled?: boolean
 }
 
 export default [
