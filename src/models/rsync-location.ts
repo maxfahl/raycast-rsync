@@ -18,15 +18,24 @@ export default class RsyncLocation {
     }
   }
 
-  getCommandPart(identifier: string, includeRemote: boolean): string {
+  validate(identifier: string, includeSsh: boolean) {
     const userName = this.userName.trim()
     const hostName = this.hostName.trim()
     const path = this.path.trim()
 
     if (!path) throw `Path is missing for ${identifier}`
-    if (userName && !hostName) throw `Host name is missing for ${identifier}`
+    if (includeSsh && userName && !hostName) throw `Hostname is missing for ${identifier}`
+    if (includeSsh && !userName && hostName) throw `Username is missing for ${identifier}`
+  }
 
-    return userName && includeRemote ? `${userName}@${hostName}:${path}` : path
+  getCommandPart(identifier: string, includeSsh: boolean): string {
+    this.validate(identifier, includeSsh)
+
+    const userName = this.userName.trim()
+    const hostName = this.hostName.trim()
+    const path = this.path.trim()
+
+    return userName && includeSsh ? `${userName}@${hostName}:${path}` : path
   }
 
   toRawData() {

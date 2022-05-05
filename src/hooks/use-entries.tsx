@@ -18,10 +18,10 @@ import type { Preferences } from "../rsync-commands"
 type UseEntriesOutput = {
   entries: RsyncEntry[]
   entryRunning: boolean
-  addEntry: (entry: RsyncEntry) => void
-  updateEntry: (entry: RsyncEntry) => void
+  addEntry: (entry: RsyncEntry) => Promise<boolean>
+  updateEntry: (entry: RsyncEntry, resetConfirmed?: boolean, skipValidation?: boolean) => Promise<boolean>
   deleteEntry: (entry: RsyncEntry) => void
-  runEntry: (entry: RsyncEntry) => void
+  runEntry: (entry: RsyncEntry) => Promise<boolean>
   copyEntryCommand: (entry: RsyncEntry) => void
 }
 
@@ -58,28 +58,54 @@ const useEntries = (): UseEntriesOutput => {
     [setEntries]
   )
 
-  const addEntry = async (entry: RsyncEntry) => {
-    entry.id = uuidv4()
-    const newEntries: RsyncEntry[] = [...entries, entry]
-    updateEntries(newEntries)
-    setCreatedEntry(entry.id)
-    await showToast({
-      style: Toast.Style.Success,
-      title: "Entry created",
-    })
+  const validateEntry = async (entry: RsyncEntry) => {
+    try {
+      entry.validate()
+    } catch (err: any) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Command Error",
+        message: err,
+      })
+      return false
+    }
+
+    return true
   }
 
-  const updateEntry = async (entry: RsyncEntry, resetConfirmed = true) => {
-    if (resetConfirmed) entry.confirmed = false
-    const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
-    if (prevEntryIndex === -1) throw "Could not find entry to update"
-    const newEntries = [...entries]
-    newEntries.splice(prevEntryIndex, 1, entry)
-    updateEntries(newEntries)
-    await showToast({
-      style: Toast.Style.Success,
-      title: "Entry updated",
-    })
+  const addEntry = async (entry: RsyncEntry) => {
+    if (await validateEntry(entry)) {
+      entry.id = uuidv4()
+      const newEntries: RsyncEntry[] = [...entries, entry]
+      updateEntries(newEntries)
+      setCreatedEntry(entry.id)
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Entry created",
+      })
+      return true
+    }
+    return false
+  }
+
+  const updateEntry = async (entry: RsyncEntry, resetConfirmed = true, skipValidation = false) => {
+    if (skipValidation || (await validateEntry(entry))) {
+      if (resetConfirmed) entry.confirmed = false
+      const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
+      if (prevEntryIndex === -1) throw "Could not find entry to update"
+      const oldEntry = entries[prevEntryIndex]
+      if (!oldEntry.equals(entry)) {
+        const newEntries = [...entries]
+        newEntries.splice(prevEntryIndex, 1, entry)
+        updateEntries(newEntries)
+        await showToast({
+          style: Toast.Style.Success,
+          title: "Entry updated",
+        })
+      }
+      return true
+    }
+    return false
   }
 
   const deleteEntry = async (entry: RsyncEntry) => {
@@ -95,45 +121,38 @@ const useEntries = (): UseEntriesOutput => {
   }
 
   const getEntryCommand = async (entry: RsyncEntry) => {
-    let command: string | undefined
-    try {
-      command = entry.getCommand()
-    } catch (err: any) {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: "Command Error",
-        message: err,
-      })
-    }
-    return command
+    await validateEntry(entry)
+    return entry.getCommand()
   }
 
   const runEntry = async (entry: RsyncEntry, pushResultView = true) => {
-    const command = await getEntryCommand(entry)
-    if (!command) return
+    if (await validateEntry(entry)) {
+      const command = await getEntryCommand(entry)
 
-    if (!preferences.noVerifyCommands && !entry.confirmed) {
-      const confirmResponse = await confirmAlert({
-        title: "Are you sure about this?",
-        message: `Rsync can be a destructive command. You have to confirm a command before running it the first time after creation, as well as after each update.`,
-        primaryAction: {
-          title: "Execute",
-          style: Alert.ActionStyle.Destructive,
-        },
-      })
-      if (!confirmResponse) {
-        return
+      if (!preferences.noVerifyCommands && !entry.confirmed) {
+        const confirmResponse = await confirmAlert({
+          title: "Are you sure about this?",
+          message: `Rsync can be a destructive command. You have to confirm a command before running it the first time after creation, as well as after each update.`,
+          primaryAction: {
+            title: "Execute",
+            style: Alert.ActionStyle.Destructive,
+          },
+        })
+        if (!confirmResponse) return false
       }
-    }
 
-    entry.confirmed = true
-    await updateEntry(entry, false)
+      const clone = entry.clone()
+      clone.confirmed = true
+      await updateEntry(clone, false)
 
-    setEntryRunning(true)
-    if (command && pushResultView) {
-      push(<CommandRunner command={command} />)
+      setEntryRunning(true)
+      if (command && pushResultView) {
+        push(<CommandRunner command={command} />)
+      }
+      setEntryRunning(false)
+      return true
     }
-    setEntryRunning(false)
+    return false
   }
 
   const copyEntryCommand = async (entry: RsyncEntry) => {

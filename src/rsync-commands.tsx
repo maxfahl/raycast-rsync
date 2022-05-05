@@ -20,9 +20,10 @@ const RsyncCommands = () => {
 
   const toggleEntryPin = useCallback(
     async (entry: RsyncEntry) => {
-      entry.pinned = !entry.pinned
-      await updateEntry(entry)
-      setSelectedItemId(entry.id)
+      const clone = entry.clone()
+      clone.pinned = !entry.pinned
+      await updateEntry(clone, false, true)
+      setSelectedItemId(clone.id)
     },
     [updateEntry]
   )
@@ -34,15 +35,6 @@ const RsyncCommands = () => {
     clone.pinned = false
     clone.confirmed = false
     return clone
-  }
-
-  const hasErrors = (entry: RsyncEntry): boolean => {
-    try {
-      entry.getCommand()
-      return false
-    } catch (err: any) {
-      return true
-    }
   }
 
   const getListItem = useCallback(
@@ -59,22 +51,22 @@ const RsyncCommands = () => {
               <Action.Push title="Edit" target={<EntryForm source={entry} />} />
               <Action
                 title="Delete"
-                shortcut={{ modifiers: ["cmd"], key: "backspace" }}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "backspace" }}
                 onAction={() => deleteEntry(entry)}
               />
               <Action.Push
                 title="Duplicate"
-                shortcut={{ modifiers: ["cmd"], key: "d" }}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
                 target={<EntryForm source={duplicateEntry(entry)} />}
               />
               <Action
                 title="Copy to Clipboard"
-                shortcut={{ modifiers: ["cmd"], key: "c" }}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
                 onAction={() => copyEntryCommand(entry)}
               />
               <Action
                 title={entry.pinned ? "Unpin" : "Pin"}
-                shortcut={{ modifiers: ["cmd"], key: "p" }}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "p" }}
                 onAction={() => toggleEntryPin(entry)}
               />
             </ActionPanel>

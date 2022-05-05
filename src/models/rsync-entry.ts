@@ -1,6 +1,5 @@
 import RsyncLocation, { RsyncLocationRaw } from "./rsync-location"
 import { RsyncDataOption } from "../data/rsync-options"
-import { v4 as uuidv4 } from "uuid"
 import Sugar from "sugar"
 
 export type SshSelection = "none" | "source" | "destination"
@@ -43,6 +42,12 @@ export default class RsyncEntry {
       this.pinned = false
       this.confirmed = false
     }
+  }
+
+  validate() {
+    if (!this.name.trim()) throw "Entry is missing a name."
+    this.source.validate("source", this.sshSelection === "source")
+    this.destination.validate("destination", this.sshSelection === "destination")
   }
 
   getCommand(): string {
@@ -88,6 +93,10 @@ export default class RsyncEntry {
 
   clone(): RsyncEntry {
     return new RsyncEntry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
+  }
+
+  equals(entry: RsyncEntry) {
+    return JSON.stringify(entry.toRawData()) === JSON.stringify(this.toRawData())
   }
 }
 
