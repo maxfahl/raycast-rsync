@@ -7,7 +7,8 @@ with all the options supported by rsync.
 
 1. Create, update, delete and duplicate pre-configured rsync commands.
 2. Pin your most used commands.
-3. Run one of your save commands directly from Raycase, or copy the rsync command to run yourself in the terminal.
+3. Run one of your save commands directly from Raycase.
+4. Copy a rsync command to the clipboard to run it manually.
 
 #### Requirements:
 
