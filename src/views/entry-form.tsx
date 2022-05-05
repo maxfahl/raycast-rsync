@@ -13,12 +13,10 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
   const [entry, setEntry] = useState<RsyncEntry>(source || new RsyncEntry())
   const [optionFilter, setOptionFilter] = useState<string>('')
   const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>([])
-  // const [command, setCommand] = useState<string>('')
-  // const [error, setError] = useState<string>('')
 
   const { pop } = useNavigation()
-  const { addEntry, updateEntry, deleteEntry } = useEntries()
-  const { runEntry, entryRunning } = useEntries()
+  const { addEntry, updateEntry, deleteEntry, runEntry, copyEntryCommand, entryRunning } =
+    useEntries()
 
   const update = source && source.id
 
@@ -134,7 +132,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
     [optionFilter]
   )
 
-  const cta = update ? 'Update Entry' : 'Create Entry'
+  const cta = update ? 'Update' : 'Create'
   return (
     <Form
       isLoading={entryRunning}
@@ -142,7 +140,12 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
       actions={
         <ActionPanel>
           <Action.SubmitForm title={cta} onSubmit={saveEntry} />
-          <Action title={'Execute Command'} onAction={() => runEntry(entry)} />
+          <Action title={'Run'} onAction={() => runEntry(entry)} />
+          <Action
+            title="Copy to Clipboard"
+            shortcut={{ modifiers: ['cmd'], key: 'c' }}
+            onAction={() => copyEntryCommand(entry)}
+          />
           {source && <Action title={'Delete'} onAction={() => removeEntry()} />}
         </ActionPanel>
       }

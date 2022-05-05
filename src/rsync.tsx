@@ -8,7 +8,7 @@ const Rsync = () => {
   const [entryFilter, setEntryFilter] = useState<string>('')
   const [filteredEntries, setFilteredEntries] = useState<RsyncEntry[]>([])
 
-  const { entries, deleteEntry, runEntry, entryRunning } = useEntries()
+  const { entries, deleteEntry, runEntry, copyEntryCommand, entryRunning } = useEntries()
 
   const duplicateEntry = (entry: RsyncEntry) => {
     const clone = entry.clone(true)
@@ -41,7 +41,7 @@ const Rsync = () => {
       isLoading={entryRunning}
       enableFiltering={false}
       onSearchTextChange={setEntryFilter}
-      navigationTitle="rsync"
+      navigationTitle="Run Rsync Command"
       searchBarPlaceholder=""
     >
       <List.Item
@@ -64,12 +64,22 @@ const Rsync = () => {
             ]}
             actions={
               <ActionPanel>
-                <Action title="Execute Command" onAction={() => runEntry(entry)} />
+                <Action title="Run" onAction={() => runEntry(entry)} />
                 <Action.Push title="Edit" target={<EntryForm source={entry} />} />
-                <Action title="Delete" onAction={() => deleteEntry(entry)} />
+                <Action
+                  title="Delete"
+                  shortcut={{ modifiers: ['cmd'], key: 'backspace' }}
+                  onAction={() => deleteEntry(entry)}
+                />
                 <Action.Push
                   title="Duplicate"
+                  shortcut={{ modifiers: ['cmd'], key: 'd' }}
                   target={<EntryForm source={duplicateEntry(entry)} />}
+                />
+                <Action
+                  title="Copy to Clipboard"
+                  shortcut={{ modifiers: ['cmd'], key: 'c' }}
+                  onAction={() => copyEntryCommand(entry)}
                 />
               </ActionPanel>
             }

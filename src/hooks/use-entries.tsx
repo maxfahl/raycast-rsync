@@ -1,6 +1,6 @@
 import RsyncEntry, { RsyncEntryRaw } from '../models/rsync-entry'
 import { useCallback, useEffect, useState } from 'react'
-import { LocalStorage, showToast, Toast, useNavigation } from '@raycast/api'
+import { LocalStorage, showToast, Toast, Clipboard, useNavigation } from '@raycast/api'
 import useEntryStore from '../store'
 import CommandRunner from '../views/command-runner'
 import { v4 as uuidv4 } from 'uuid'
@@ -12,6 +12,7 @@ type UseEntriesOutput = {
   updateEntry: (entry: RsyncEntry) => void
   deleteEntry: (entry: RsyncEntry) => void
   runEntry: (entry: RsyncEntry) => void
+  copyEntryCommand: (entry: RsyncEntry) => void
 }
 
 const useEntries = (): UseEntriesOutput => {
@@ -69,15 +70,10 @@ const useEntries = (): UseEntriesOutput => {
     updateEntries(newEntries)
   }
 
-  const runEntry = async (entry: RsyncEntry, pushResultView = true) => {
-    setEntryRunning(true)
-
+  const getEntryCommand = async (entry: RsyncEntry) => {
+    let command: string | undefined
     try {
-      const command = entry.getCommand()
-      // execResult = await execSync(command)
-      if (pushResultView) {
-        push(<CommandRunner command={command} />)
-      }
+      command = entry.getCommand()
     } catch (err: any) {
       await showToast({
         style: Toast.Style.Failure,
@@ -85,11 +81,30 @@ const useEntries = (): UseEntriesOutput => {
         message: err,
       })
     }
+    return command
+  }
 
+  const runEntry = async (entry: RsyncEntry, pushResultView = true) => {
+    setEntryRunning(true)
+    const command = await getEntryCommand(entry)
+    if (command && pushResultView) {
+      push(<CommandRunner command={command} />)
+    }
     setEntryRunning(false)
   }
 
-  return { entries, addEntry, updateEntry, deleteEntry, runEntry, entryRunning }
+  const copyEntryCommand = async (entry: RsyncEntry) => {
+    const command = await getEntryCommand(entry)
+    if (command) {
+      await Clipboard.copy(command)
+      await showToast({
+        style: Toast.Style.Success,
+        title: 'Copied Command to Clipboard',
+      })
+    }
+  }
+
+  return { entries, addEntry, updateEntry, deleteEntry, runEntry, copyEntryCommand, entryRunning }
 }
 
 export default useEntries

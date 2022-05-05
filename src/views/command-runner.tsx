@@ -2,9 +2,9 @@ import { FC, useEffect, useState } from 'react'
 import { Action, ActionPanel, Detail, showToast, Toast, useNavigation } from '@raycast/api'
 import useSystem from '../hooks/use-system'
 
-const inProgressMessage = 'Synchronizing files'
+const inProgressMessage = 'Synchronizing files...'
 const successMessage = 'Files synchronized successfully'
-const errorMessage = 'Failed syncing files'
+const errorMessage = 'Failed synchronizing files'
 
 type ResultProps = {
   command: string
@@ -23,10 +23,10 @@ const CommandRunner: FC<ResultProps> = ({ command }) => {
   const commandSucceeded = commandFinished && processExit === 0
   const retryText = retryCount > 0 ? ` (retry #${retryCount})` : ''
   const outputHeader = !commandFinished
-    ? `**${inProgressMessage}**${retryText}`
+    ? `# ${inProgressMessage}${retryText}`
     : commandSucceeded
-    ? `**${successMessage}**`
-    : `**${errorMessage}**${retryText}`
+    ? `# ${successMessage} ⚡`
+    : `# ${errorMessage}${retryText} 💥`
   const output = `${outputHeader}\n${processOut}`
 
   useEffect(
@@ -65,7 +65,7 @@ const CommandRunner: FC<ResultProps> = ({ command }) => {
       const doShowToast = async () => {
         await showToast({
           style: commandSucceeded ? Toast.Style.Success : Toast.Style.Failure,
-          title: commandSucceeded ? 'Done' : 'Error',
+          title: commandSucceeded ? 'Success' : 'Error',
           message: commandSucceeded ? successMessage : errorMessage,
         })
       }
