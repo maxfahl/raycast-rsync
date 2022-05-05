@@ -2,18 +2,34 @@ import { Action, ActionPanel, Icon, List } from '@raycast/api'
 import EntryForm from './views/entry-form'
 import RsyncEntry from './models/rsync-entry'
 import useEntries from './hooks/use-entries'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigationStore } from './store'
 
 const Rsync = () => {
   const [entryFilter, setEntryFilter] = useState<string>('')
-  const [filteredEntries, setFilteredEntries] = useState<RsyncEntry[]>([])
+  const [pinnedEntries, setPinnedEntries] = useState<RsyncEntry[]>([])
+  const [otherEntries, setOtherEntries] = useState<RsyncEntry[]>([])
+  const [selectedItemId, setSelectedItemId] = useState<string | undefined>(undefined)
 
-  const { entries, deleteEntry, runEntry, copyEntryCommand, entryRunning } = useEntries()
+  const { entries, deleteEntry, updateEntry, runEntry, copyEntryCommand, entryRunning } =
+    useEntries()
+  const createdEntry = useNavigationStore(state => state.createdEntry)
+
+  const toggleEntryPin = useCallback(
+    async (entry: RsyncEntry) => {
+      entry.pinned = !entry.pinned
+      await updateEntry(entry)
+      setSelectedItemId(entry.id)
+    },
+    [updateEntry]
+  )
 
   const duplicateEntry = (entry: RsyncEntry) => {
-    const clone = entry.clone(true)
+    const clone = entry.clone()
     clone.id = undefined
     clone.name = `${clone.name} Duplicate`
+    clone.pinned = false
+    clone.confirmed = false
     return clone
   }
 
@@ -26,12 +42,64 @@ const Rsync = () => {
     }
   }
 
+  const getListItem = useCallback(
+    function (entry: RsyncEntry) {
+      return (
+        <List.Item
+          id={entry.id}
+          key={entry.id}
+          title={entry.name}
+          accessories={[
+            { text: hasErrors(entry) ? '(Contains errors)' : entry.description },
+            // { icon: Icon.Terminal },
+          ]}
+          actions={
+            <ActionPanel>
+              <Action title="Run" onAction={() => runEntry(entry)} />
+              <Action.Push title="Edit" target={<EntryForm source={entry} />} />
+              <Action
+                title="Delete"
+                shortcut={{ modifiers: ['cmd'], key: 'backspace' }}
+                onAction={() => deleteEntry(entry)}
+              />
+              <Action.Push
+                title="Duplicate"
+                shortcut={{ modifiers: ['cmd'], key: 'd' }}
+                target={<EntryForm source={duplicateEntry(entry)} />}
+              />
+              <Action
+                title="Copy to Clipboard"
+                shortcut={{ modifiers: ['cmd'], key: 'c' }}
+                onAction={() => copyEntryCommand(entry)}
+              />
+              <Action
+                title={entry.pinned ? 'Unpin' : 'Pin'}
+                shortcut={{ modifiers: ['cmd'], key: 'p' }}
+                onAction={() => toggleEntryPin(entry)}
+              />
+            </ActionPanel>
+          }
+        />
+      )
+    },
+    [copyEntryCommand, deleteEntry, toggleEntryPin, runEntry]
+  )
+
+  useEffect(
+    function () {
+      if (createdEntry) setSelectedItemId(createdEntry)
+    },
+    [createdEntry]
+  )
+
   useEffect(
     function () {
       const filterStr = entryFilter.trim()
-      setFilteredEntries(
-        entryFilter ? entries.filter(e => e.name.toLowerCase().includes(filterStr)) : entries
-      )
+      const filteredEntries = entryFilter
+        ? entries.filter(e => e.name.toLowerCase().includes(filterStr))
+        : entries
+      setPinnedEntries(filteredEntries.filter(e => e.pinned))
+      setOtherEntries(filteredEntries.filter(e => !e.pinned))
     },
     [entries, entryFilter]
   )
@@ -43,6 +111,7 @@ const Rsync = () => {
       onSearchTextChange={setEntryFilter}
       navigationTitle="Run Rsync Command"
       searchBarPlaceholder=""
+      selectedItemId={selectedItemId}
     >
       <List.Item
         title="Create new entry..."
@@ -53,39 +122,8 @@ const Rsync = () => {
           </ActionPanel>
         }
       />
-      <List.Section title="Saved Entries">
-        {filteredEntries.map(entry => (
-          <List.Item
-            key={entry.id}
-            title={entry.name}
-            accessories={[
-              { text: hasErrors(entry) ? '(Contains errors)' : entry.description },
-              // { icon: Icon.Terminal },
-            ]}
-            actions={
-              <ActionPanel>
-                <Action title="Run" onAction={() => runEntry(entry)} />
-                <Action.Push title="Edit" target={<EntryForm source={entry} />} />
-                <Action
-                  title="Delete"
-                  shortcut={{ modifiers: ['cmd'], key: 'backspace' }}
-                  onAction={() => deleteEntry(entry)}
-                />
-                <Action.Push
-                  title="Duplicate"
-                  shortcut={{ modifiers: ['cmd'], key: 'd' }}
-                  target={<EntryForm source={duplicateEntry(entry)} />}
-                />
-                <Action
-                  title="Copy to Clipboard"
-                  shortcut={{ modifiers: ['cmd'], key: 'c' }}
-                  onAction={() => copyEntryCommand(entry)}
-                />
-              </ActionPanel>
-            }
-          />
-        ))}
-      </List.Section>
+      <List.Section title="Pinned Entries">{pinnedEntries.map(getListItem)}</List.Section>
+      <List.Section title="Entries">{otherEntries.map(getListItem)}</List.Section>
     </List>
   )
 }

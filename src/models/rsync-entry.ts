@@ -18,6 +18,8 @@ export default class RsyncEntry {
   public destination: RsyncLocation
   public options: Options
   public sshSelection: SshSelection
+  public pinned: boolean
+  public confirmed: boolean // If the user has confirmed that this entry looks good before running it.
 
   constructor(rawData?: RsyncEntryRaw) {
     if (rawData) {
@@ -28,6 +30,8 @@ export default class RsyncEntry {
       this.destination = new RsyncLocation(rawData.destination)
       this.options = rawData.options
       this.sshSelection = rawData.sshSelection
+      this.pinned = rawData.pinned
+      this.confirmed = rawData.confirmed
     } else {
       this.id = undefined
       this.name = ''
@@ -36,6 +40,8 @@ export default class RsyncEntry {
       this.destination = new RsyncLocation()
       this.options = {}
       this.sshSelection = 'none'
+      this.pinned = false
+      this.confirmed = false
     }
   }
 
@@ -75,13 +81,13 @@ export default class RsyncEntry {
       destination: this.destination.toRawData(),
       options: this.options,
       sshSelection: this.sshSelection,
+      pinned: this.pinned,
+      confirmed: this.confirmed,
     }
   }
 
-  clone(resetId = false): RsyncEntry {
-    const clone = new RsyncEntry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
-    if (resetId) clone.id = uuidv4()
-    return clone
+  clone(): RsyncEntry {
+    return new RsyncEntry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
   }
 }
 
@@ -93,4 +99,6 @@ export type RsyncEntryRaw = {
   destination: RsyncLocationRaw
   options: Options
   sshSelection: SshSelection
+  pinned: boolean
+  confirmed: boolean
 }

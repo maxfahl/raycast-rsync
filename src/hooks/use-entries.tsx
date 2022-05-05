@@ -1,7 +1,15 @@
 import RsyncEntry, { RsyncEntryRaw } from '../models/rsync-entry'
 import { useCallback, useEffect, useState } from 'react'
-import { LocalStorage, showToast, Toast, Clipboard, useNavigation } from '@raycast/api'
-import useEntryStore from '../store'
+import {
+  LocalStorage,
+  showToast,
+  Toast,
+  Clipboard,
+  useNavigation,
+  confirmAlert,
+  Alert,
+} from '@raycast/api'
+import { useEntryStore, useNavigationStore } from '../store'
 import CommandRunner from '../views/command-runner'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -16,10 +24,11 @@ type UseEntriesOutput = {
 }
 
 const useEntries = (): UseEntriesOutput => {
-  const [entries, setEntries] = useEntryStore(state => [state.entries, state.setEntries])
   const [entryRunning, setEntryRunning] = useState<boolean>(false) // If a rsync command is running
 
   const { push } = useNavigation()
+  const [entries, setEntries] = useEntryStore(state => [state.entries, state.setEntries])
+  const setCreatedEntry = useNavigationStore(state => state.setCreatedEntry)
 
   const storeEntries = (entries: RsyncEntry[]) => {
     LocalStorage.setItem('entries', JSON.stringify(entries.map(e => e.toRawData())))
@@ -48,26 +57,40 @@ const useEntries = (): UseEntriesOutput => {
     [setEntries]
   )
 
-  const addEntry = (entry: RsyncEntry) => {
+  const addEntry = async (entry: RsyncEntry) => {
     entry.id = uuidv4()
     const newEntries: RsyncEntry[] = [...entries, entry]
     updateEntries(newEntries)
+    setCreatedEntry(entry.id)
+    await showToast({
+      style: Toast.Style.Success,
+      title: 'Entry created',
+    })
   }
 
-  const updateEntry = (entry: RsyncEntry) => {
+  const updateEntry = async (entry: RsyncEntry) => {
     const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
     if (prevEntryIndex === -1) throw 'Could not find entry to update'
     const newEntries = [...entries]
+    entry.confirmed = false
     newEntries.splice(prevEntryIndex, 1, entry)
     updateEntries(newEntries)
+    await showToast({
+      style: Toast.Style.Success,
+      title: 'Entry updated',
+    })
   }
 
-  const deleteEntry = (entry: RsyncEntry) => {
+  const deleteEntry = async (entry: RsyncEntry) => {
     const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
     if (prevEntryIndex === -1) throw 'Could not find entry to update'
     const newEntries = [...entries]
     newEntries.splice(prevEntryIndex, 1)
     updateEntries(newEntries)
+    await showToast({
+      style: Toast.Style.Success,
+      title: 'Entry deleted',
+    })
   }
 
   const getEntryCommand = async (entry: RsyncEntry) => {
@@ -85,8 +108,25 @@ const useEntries = (): UseEntriesOutput => {
   }
 
   const runEntry = async (entry: RsyncEntry, pushResultView = true) => {
-    setEntryRunning(true)
+    if (!entry.confirmed) {
+      const confirmResponse = await confirmAlert({
+        title: 'Are you sure about this?',
+        message: `Rsync can be a destructive command. You have to confirm a command before running it the first time you run it after creation and after each update.`,
+        primaryAction: {
+          title: 'Execute',
+          style: Alert.ActionStyle.Destructive,
+        },
+      })
+      if (!confirmResponse) {
+        return
+      }
+    }
+
+    entry.confirmed = true
+    updateEntry(entry)
+
     const command = await getEntryCommand(entry)
+    setEntryRunning(true)
     if (command && pushResultView) {
       push(<CommandRunner command={command} />)
     }

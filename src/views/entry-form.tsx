@@ -93,7 +93,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
 
   const getSshFields = useCallback(
     (location: 'source' | 'destination') => {
-      // console.log(`${location}: ${entry.sshSelection === location ? 'true' : 'false'}`)
+      // console.log(`${location} ${entry.sshSelection === location ? 'true' : 'false'}`)
 
       return entry.sshSelection === location ? (
         <Fragment key={`location-fields-${location}`}>
@@ -178,6 +178,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
         <Form.Dropdown.Item value="source" title="Source" />
         <Form.Dropdown.Item value="destination" title="Destination" />
       </Form.Dropdown>
+      <Form.Description text={entry.sshSelection} />
 
       <Form.Separator />
       <Form.Description text="Source" />
