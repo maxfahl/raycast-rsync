@@ -1,4 +1,4 @@
-import RsyncLocation, { RsyncLocationRaw } from "./rsync-location"
+import EntryLocation, { RsyncLocationRaw } from "./entry-location"
 import { RsyncDataOption } from "../data/rsync-options"
 import Sugar from "sugar"
 
@@ -9,38 +9,44 @@ export type RsyncOption = {
 } & RsyncDataOption
 type Options = { [key: string]: RsyncOption }
 
-export default class RsyncEntry {
+export default class Entry {
   public id: string | undefined
   public name: string
   public description: string
-  public source: RsyncLocation
-  public destination: RsyncLocation
+  public source: EntryLocation
+  public destination: EntryLocation
   public options: Options
   public sshSelection: SshSelection
   public pinned: boolean
   public confirmed: boolean // If the user has confirmed that this entry looks good before running it.
+  public runCount: number
+  public createdAt: number
 
   constructor(rawData?: RsyncEntryRaw) {
     if (rawData) {
       this.id = rawData.id
       this.name = rawData.name
       this.description = rawData.description
-      this.source = new RsyncLocation(rawData.source)
-      this.destination = new RsyncLocation(rawData.destination)
+      this.source = new EntryLocation(rawData.source)
+      this.destination = new EntryLocation(rawData.destination)
       this.options = rawData.options
       this.sshSelection = rawData.sshSelection
       this.pinned = rawData.pinned
       this.confirmed = rawData.confirmed
+      this.runCount = rawData.runCount
+      this.createdAt = rawData.createdAt
     } else {
       this.id = undefined
       this.name = ""
       this.description = ""
-      this.source = new RsyncLocation()
-      this.destination = new RsyncLocation()
+      this.source = new EntryLocation()
+      this.destination = new EntryLocation()
       this.options = {}
       this.sshSelection = "none"
       this.pinned = false
       this.confirmed = false
+      this.runCount = 0
+      this.createdAt = new Date().getTime()
     }
   }
 
@@ -88,14 +94,16 @@ export default class RsyncEntry {
       sshSelection: this.sshSelection,
       pinned: this.pinned,
       confirmed: this.confirmed,
+      runCount: this.runCount,
+      createdAt: this.createdAt,
     }
   }
 
-  clone(): RsyncEntry {
-    return new RsyncEntry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
+  clone(): Entry {
+    return new Entry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
   }
 
-  equals(entry: RsyncEntry) {
+  equals(entry: Entry) {
     return JSON.stringify(entry.toRawData()) === JSON.stringify(this.toRawData())
   }
 }
@@ -110,4 +118,6 @@ export type RsyncEntryRaw = {
   sshSelection: SshSelection
   pinned: boolean
   confirmed: boolean
+  runCount: number
+  createdAt: number
 }

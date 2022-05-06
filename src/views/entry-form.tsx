@@ -1,16 +1,16 @@
 import { Action, ActionPanel, Form, useNavigation } from "@raycast/api"
 import { FC, Fragment, useCallback, useEffect, useState } from "react"
-import RsyncEntry, { RsyncOption } from "../models/rsync-entry"
+import Entry, { RsyncOption } from "../models/entry"
 import rsyncOptions, { RsyncDataOption } from "../data/rsync-options"
 import Sugar from "sugar"
 import useEntries from "../hooks/use-entries"
 
 type EntryFormProps = {
-  source?: RsyncEntry
+  source?: Entry
 }
 
 const EntryForm: FC<EntryFormProps> = ({ source }) => {
-  const [entry, setEntry] = useState<RsyncEntry>(source || new RsyncEntry())
+  const [entry, setEntry] = useState<Entry>(source || new Entry())
   const [optionFilter, setOptionFilter] = useState<string>("")
   const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>([])
 
@@ -35,7 +35,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
   }
 
   const setValue = (propPath: string, value: boolean | string | RsyncOption) => {
-    setEntry(prev => Sugar.Object.set(prev.clone(), propPath, value) as RsyncEntry)
+    setEntry(prev => Sugar.Object.set(prev.clone(), propPath, value) as Entry)
   }
 
   const getValue = useCallback(
@@ -165,7 +165,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
       <Form.TextField
         id="name"
         title="Name*"
-        placeholder="Website Backup, Sync Photo Collection..."
+        placeholder="Website Backup, Photo Collection Sync..."
         autoFocus={false}
         defaultValue={getValue("name")}
         onChange={setValue.bind(this, "name")}

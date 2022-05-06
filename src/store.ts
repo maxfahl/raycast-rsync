@@ -1,5 +1,5 @@
 import create from "zustand"
-import RsyncEntry from "./models/rsync-entry"
+import Entry from "./models/entry"
 
 interface NavigationStore {
   createdEntry: string | undefined
@@ -12,13 +12,13 @@ const useNavigationStore = create<NavigationStore>(set => ({
 }))
 
 interface EntryStore {
-  entries: RsyncEntry[]
-  setEntries: (entries: RsyncEntry[]) => void
+  entries: Entry[]
+  setEntries: (entries: Entry[]) => void
 }
 
 const useEntryStore = create<EntryStore>(set => ({
   entries: [],
-  setEntries: (entries: RsyncEntry[]) => set({ entries }),
+  setEntries: (entries: Entry[]) => set({ entries }),
 }))
 
 export { useNavigationStore, useEntryStore }

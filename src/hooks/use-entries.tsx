@@ -1,4 +1,4 @@
-import RsyncEntry, { RsyncEntryRaw } from "../models/rsync-entry"
+import Entry, { RsyncEntryRaw } from "../models/entry"
 import { useCallback, useEffect, useState } from "react"
 import {
   LocalStorage,
@@ -16,13 +16,13 @@ import { v4 as uuidv4 } from "uuid"
 import type { Preferences } from "../rsync-commands"
 
 type UseEntriesOutput = {
-  entries: RsyncEntry[]
+  entries: Entry[]
   entryRunning: boolean
-  addEntry: (entry: RsyncEntry) => Promise<boolean>
-  updateEntry: (entry: RsyncEntry, resetConfirmed?: boolean, skipValidation?: boolean) => Promise<boolean>
-  deleteEntry: (entry: RsyncEntry) => void
-  runEntry: (entry: RsyncEntry) => Promise<boolean>
-  copyEntryCommand: (entry: RsyncEntry) => void
+  addEntry: (entry: Entry) => Promise<boolean>
+  updateEntry: (entry: Entry, resetConfirmed?: boolean, skipValidation?: boolean) => Promise<boolean>
+  deleteEntry: (entry: Entry) => void
+  runEntry: (entry: Entry) => Promise<boolean>
+  copyEntryCommand: (entry: Entry) => void
 }
 
 const useEntries = (): UseEntriesOutput => {
@@ -33,12 +33,12 @@ const useEntries = (): UseEntriesOutput => {
   const setCreatedEntry = useNavigationStore(state => state.setCreatedEntry)
   const preferences = getPreferenceValues<Preferences>()
 
-  const storeEntries = (entries: RsyncEntry[]) => {
+  const storeEntries = (entries: Entry[]) => {
     LocalStorage.setItem("entries", JSON.stringify(entries.map(e => e.toRawData())))
   }
 
   const updateEntries = useCallback(
-    (entries: RsyncEntry[]) => {
+    (entries: Entry[]) => {
       setEntries(entries)
       storeEntries(entries)
     },
@@ -49,7 +49,7 @@ const useEntries = (): UseEntriesOutput => {
     function () {
       const loadEntries = async () => {
         const entries = await LocalStorage.getItem<string>("entries")
-        const rsyncEntries = entries ? JSON.parse(entries).map((e: RsyncEntryRaw) => new RsyncEntry(e)) : []
+        const rsyncEntries = entries ? JSON.parse(entries).map((e: RsyncEntryRaw) => new Entry(e)) : []
         setEntries(rsyncEntries)
       }
 
@@ -58,7 +58,7 @@ const useEntries = (): UseEntriesOutput => {
     [setEntries]
   )
 
-  const validateEntry = async (entry: RsyncEntry) => {
+  const validateEntry = async (entry: Entry) => {
     try {
       entry.validate()
     } catch (err: any) {
@@ -73,10 +73,10 @@ const useEntries = (): UseEntriesOutput => {
     return true
   }
 
-  const addEntry = async (entry: RsyncEntry) => {
+  const addEntry = async (entry: Entry) => {
     if (await validateEntry(entry)) {
       entry.id = uuidv4()
-      const newEntries: RsyncEntry[] = [...entries, entry]
+      const newEntries: Entry[] = [...entries, entry]
       updateEntries(newEntries)
       setCreatedEntry(entry.id)
       await showToast({
@@ -88,7 +88,7 @@ const useEntries = (): UseEntriesOutput => {
     return false
   }
 
-  const updateEntry = async (entry: RsyncEntry, resetConfirmed = true, skipValidation = false) => {
+  const updateEntry = async (entry: Entry, resetConfirmed = true, skipValidation = false) => {
     if (skipValidation || (await validateEntry(entry))) {
       if (resetConfirmed) entry.confirmed = false
       const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
@@ -108,7 +108,7 @@ const useEntries = (): UseEntriesOutput => {
     return false
   }
 
-  const deleteEntry = async (entry: RsyncEntry) => {
+  const deleteEntry = async (entry: Entry) => {
     const prevEntryIndex = entries.findIndex(e => e.id === entry.id)
     if (prevEntryIndex === -1) throw "Could not find entry to update"
     const newEntries = [...entries]
@@ -120,12 +120,12 @@ const useEntries = (): UseEntriesOutput => {
     })
   }
 
-  const getEntryCommand = async (entry: RsyncEntry) => {
+  const getEntryCommand = async (entry: Entry) => {
     await validateEntry(entry)
     return entry.getCommand()
   }
 
-  const runEntry = async (entry: RsyncEntry, pushResultView = true) => {
+  const runEntry = async (entry: Entry, pushResultView = true) => {
     if (await validateEntry(entry)) {
       const command = await getEntryCommand(entry)
 
@@ -143,6 +143,8 @@ const useEntries = (): UseEntriesOutput => {
 
       const clone = entry.clone()
       clone.confirmed = true
+      const prevRunCount = clone.runCount ?? 0
+      clone.runCount = prevRunCount + 1
       await updateEntry(clone, false)
 
       setEntryRunning(true)
@@ -155,7 +157,7 @@ const useEntries = (): UseEntriesOutput => {
     return false
   }
 
-  const copyEntryCommand = async (entry: RsyncEntry) => {
+  const copyEntryCommand = async (entry: Entry) => {
     const command = await getEntryCommand(entry)
     if (command) {
       await Clipboard.copy(command)

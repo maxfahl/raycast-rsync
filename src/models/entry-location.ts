@@ -1,4 +1,4 @@
-export default class RsyncLocation {
+export default class EntryLocation {
   public userName: string
   public hostName: string
   public port: string
