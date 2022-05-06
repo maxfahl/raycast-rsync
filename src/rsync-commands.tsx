@@ -34,7 +34,6 @@ const RsyncCommands = () => {
   useEffect(
     function () {
       if (!sortBy) return
-      console.log(entries.length)
       const filterStr = entryFilter.trim()
       const filteredAndSortedEntries = (
         entryFilter ? entries.filter(e => e.name.toLowerCase().includes(filterStr)) : entries
