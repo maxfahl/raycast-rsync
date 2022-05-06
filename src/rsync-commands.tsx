@@ -128,7 +128,7 @@ const RsyncCommands = () => {
           id="sortOrder"
           storeValue={true}
           onChange={value => setSortBy(value as EntrySorting)}
-          tooltip="Sort the list by property"
+          tooltip="Sort by property"
           defaultValue="name"
         >
           <List.Dropdown.Item key="sortName" title="Name" value="name" />
