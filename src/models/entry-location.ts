@@ -4,7 +4,7 @@ export default class EntryLocation {
   public port: string
   public path: string
 
-  constructor(rawData?: RsyncLocationRaw) {
+  constructor(rawData?: EntryLocationRaw) {
     if (rawData) {
       this.userName = rawData.userName
       this.hostName = rawData.hostName
@@ -44,11 +44,11 @@ export default class EntryLocation {
       hostName: this.hostName,
       port: this.port,
       path: this.path,
-    } as RsyncLocationRaw
+    } as EntryLocationRaw
   }
 }
 
-export type RsyncLocationRaw = {
+export type EntryLocationRaw = {
   userName: string
   hostName: string
   port: string

@@ -1,4 +1,4 @@
-export type RsyncDataOption = {
+export type EntryOptionData = {
   name: string
   description: string
   param?: string
@@ -140,4 +140,4 @@ export default [
   { name: "daemon", description: "Run as an rsync daemon." },
   { name: "config", param: "file", description: "Specify alternate rsyncd.conf file." },
   { name: "no-detach", description: "Do not detach from the parent." },
-] as RsyncDataOption[]
+] as EntryOptionData[]

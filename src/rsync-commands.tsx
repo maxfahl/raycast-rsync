@@ -1,6 +1,6 @@
 import { Action, ActionPanel, Icon, List, LocalStorage } from "@raycast/api"
 import EntryForm from "./views/entry-form"
-import Entry, { RsyncEntryRaw } from "./models/entry"
+import Entry, { EntryRaw } from "./models/entry"
 import useEntries from "./hooks/use-entries"
 import { useEffect, useState } from "react"
 import { useEntryStore, useNavigationStore } from "./store"
@@ -17,18 +17,10 @@ const RsyncCommands = () => {
   const [entryFilter, setEntryFilter] = useState<string>("")
   const [pinnedEntries, setPinnedEntries] = useState<Entry[]>([])
   const [otherEntries, setOtherEntries] = useState<Entry[]>([])
-  // const [selectedItemId, setSelectedItemId] = useState<string | undefined>(undefined)
 
   const { entries, entryRunning } = useEntries()
   const selectedEntry = useNavigationStore(state => state.selectedEntry)
   const setEntries = useEntryStore(state => state.setEntries)
-
-  // useEffect(
-  //   function () {
-  //     if (selectedEntry) setSelectedItemId(selectedEntry)
-  //   },
-  //   [selectedEntry]
-  // )
 
   const sortEntries = (a: Entry, b: Entry, sortBy: EntrySorting) => {
     switch (sortBy) {
@@ -57,7 +49,7 @@ const RsyncCommands = () => {
     function () {
       const loadEntries = async () => {
         const entries = await LocalStorage.getItem<string>("entries")
-        const rsyncEntries = entries ? JSON.parse(entries).map((e: RsyncEntryRaw) => new Entry(e)) : []
+        const rsyncEntries = entries ? JSON.parse(entries).map((e: EntryRaw) => new Entry(e)) : []
         setEntries(rsyncEntries)
       }
 

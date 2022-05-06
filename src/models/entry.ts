@@ -1,13 +1,13 @@
-import EntryLocation, { RsyncLocationRaw } from "./entry-location"
-import { RsyncDataOption } from "../data/rsync-options"
+import EntryLocation, { EntryLocationRaw } from "./entry-location"
+import { EntryOptionData } from "../data/rsync-options"
 import Sugar from "sugar"
 
 export type SshSelection = "none" | "source" | "destination"
-export type RsyncOption = {
+export type EntryOption = {
   value?: string
   enabled?: boolean
-} & RsyncDataOption
-type Options = { [key: string]: RsyncOption }
+} & EntryOptionData
+type Options = { [key: string]: EntryOption }
 
 export default class Entry {
   public id: string | undefined
@@ -22,7 +22,7 @@ export default class Entry {
   public runCount: number
   public createdAt: number
 
-  constructor(rawData?: RsyncEntryRaw) {
+  constructor(rawData?: EntryRaw) {
     if (rawData) {
       this.id = rawData.id
       this.name = rawData.name
@@ -83,7 +83,7 @@ export default class Entry {
     return cmd.join(" ")
   }
 
-  toRawData(): RsyncEntryRaw {
+  toRawData(): EntryRaw {
     return {
       id: this.id,
       name: this.name,
@@ -100,7 +100,7 @@ export default class Entry {
   }
 
   clone(): Entry {
-    return new Entry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
+    return new Entry(Sugar.Object.clone(this.toRawData(), true) as EntryRaw)
   }
 
   /**
@@ -122,12 +122,12 @@ export default class Entry {
   }
 }
 
-export type RsyncEntryRaw = {
+export type EntryRaw = {
   id: string | undefined
   name: string
   description: string
-  source: RsyncLocationRaw
-  destination: RsyncLocationRaw
+  source: EntryLocationRaw
+  destination: EntryLocationRaw
   options: Options
   sshSelection: SshSelection
   pinned: boolean

@@ -1,4 +1,4 @@
-import Entry, { RsyncEntryRaw } from "../models/entry"
+import Entry, { EntryRaw } from "../models/entry"
 import { useCallback, useEffect, useRef, useState } from "react"
 import {
   LocalStorage,

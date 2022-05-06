@@ -1,9 +1,12 @@
 import { Action, ActionPanel, Form, useNavigation } from "@raycast/api"
 import { FC, Fragment, useCallback, useEffect, useState } from "react"
-import Entry, { RsyncOption } from "../models/entry"
-import rsyncOptions, { RsyncDataOption } from "../data/rsync-options"
+import Entry, { EntryOption } from "../models/entry"
+import rsyncOptions, { EntryOptionData } from "../data/rsync-options"
 import Sugar from "sugar"
 import useEntries from "../hooks/use-entries"
+import EntryOptionFormFields from "../components/entry-option-form-fields"
+import EntryLocationFormFields from "../components/entry-location-form-fields"
+import EntryLocation from "../models/entry-location"
 
 type EntryFormProps = {
   source?: Entry
@@ -12,7 +15,7 @@ type EntryFormProps = {
 const EntryForm: FC<EntryFormProps> = ({ source }) => {
   const [entry, setEntry] = useState<Entry>(source || new Entry())
   const [optionFilter, setOptionFilter] = useState<string>("")
-  const [visibleOptions, setVisibleOptions] = useState<RsyncDataOption[]>([])
+  const [visibleOptions, setVisibleOptions] = useState<EntryOptionData[]>([])
 
   const { pop } = useNavigation()
   const { addEntry, updateEntry, deleteEntry, runEntry, copyEntryCommand, entryRunning } = useEntries()
@@ -34,95 +37,34 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
     pop()
   }
 
-  const setValue = (propPath: string, value: boolean | string | RsyncOption) => {
-    setEntry(prev => Sugar.Object.set(prev.clone(), propPath, value) as Entry)
-  }
-
   const getValue = useCallback(
     (propPath: string): string => {
-      return Sugar.Object.get<string>(entry, propPath)
+      return Sugar.Object.get<boolean & string & EntryOption & undefined>(entry, propPath)
     },
     [entry]
   )
 
-  const getOptionFields = useCallback(
-    (option: RsyncDataOption) => {
-      const entryOption: RsyncOption | undefined = entry.options[option.name]
+  const setValue = (propPath: string, value: boolean | string | EntryOption | EntryLocation | undefined) => {
+    const oldValue = getValue(propPath)
+    if (oldValue !== value) {
+      setEntry(prev => Sugar.Object.set(prev.clone(), propPath, value) as Entry)
+    }
+  }
 
-      return (
-        <Fragment key={`option-${option.name}`}>
-          <Form.Checkbox
-            id={`option-${option.name}-enabled`}
-            label={`--${option.name}`}
-            defaultValue={entry.options[option.name]?.enabled}
-            info={option.description}
-            onChange={(enable: boolean) => {
-              const exists = !!entryOption
-              const enabled = entryOption?.enabled
-              const hadValue = entryOption?.value
-
-              if (enable || (!enable && enabled !== undefined)) {
-                if (!enable && !hadValue) {
-                  setEntry(prev => {
-                    delete prev.options[option.name]
-                    return prev.clone()
-                  })
-                } else if (!!enabled !== enable) {
-                  setValue(`options[${option.name}]`, {
-                    ...(exists ? entry.options[option.name] : option),
-                    enabled: enable,
-                  })
-                }
-              }
-            }}
-          />
-
-          {option.param && entryOption?.enabled && (
-            <Form.TextField
-              id={`option-${option.name}-value`}
-              placeholder={option.param}
-              defaultValue={entry.options[option.name]?.value ?? ""}
-              onChange={setValue.bind(this, `options[${option.name}].value`)}
-            />
-          )}
-        </Fragment>
-      )
-    },
-    [entry.options]
-  )
-
-  const getSshFields = useCallback(
-    (location: "source" | "destination") => {
-      // console.log(`${location} ${entry.sshSelection === location ? 'true' : 'false'}`)
-
-      return entry.sshSelection === location ? (
-        <Fragment key={`location-fields-${location}`}>
-          <Form.TextField
-            id={`${location}Username`}
-            title="Username"
-            placeholder="admin"
-            defaultValue={getValue(`${location}.userName`)}
-            onChange={setValue.bind(this, `${location}.userName`)}
-          />
-          <Form.TextField
-            id={`${location}Hostname`}
-            title="Hostname"
-            placeholder="site.dev"
-            defaultValue={getValue(`${location}.hostName`)}
-            onChange={setValue.bind(this, `${location}.hostName`)}
-          />
-          <Form.TextField
-            id={`${location}Port`}
-            placeholder="22"
-            title="Port"
-            defaultValue={getValue(`${location}.port`)}
-            onChange={setValue.bind(this, `${location}.port`)}
-          />
-        </Fragment>
-      ) : null
-    },
-    [getValue, entry]
-  )
+  const onOptionChange = (optionSource: EntryOptionData, option: EntryOption | undefined) => {
+    setEntry(prev => {
+      if (prev.options[optionSource.name] !== option) {
+        const clone = prev.clone()
+        if (!option) {
+          delete clone.options[optionSource.name]
+        } else {
+          clone.options[optionSource.name] = option
+        }
+        return clone
+      }
+      return prev
+    })
+  }
 
   useEffect(
     function () {
@@ -168,14 +110,14 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
         placeholder="Website Backup, Photo Collection Sync..."
         autoFocus={false}
         defaultValue={getValue("name")}
-        onChange={setValue.bind(this, "name")}
+        onChange={value => setValue("name", value)}
       />
       <Form.TextArea
         id="description"
         title="Description"
         placeholder="Describe the command to more easily remember it at a glance..."
         defaultValue={getValue("description")}
-        onChange={setValue.bind(this, "description")}
+        onChange={value => setValue("description", value)}
       />
 
       <Form.Dropdown
@@ -183,7 +125,7 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
         title="SSH"
         info="Specify if the source or destination will be using SSH."
         defaultValue={getValue("sshSelection")}
-        onChange={setValue.bind(this, "sshSelection")}
+        onChange={value => setValue("sshSelection", value)}
       >
         <Form.Dropdown.Item value="none" title="None" />
         <Form.Dropdown.Item value="source" title="Source" />
@@ -192,26 +134,20 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
 
       <Form.Separator />
       <Form.Description text="Source" />
-
-      {getSshFields("source")}
-      <Form.TextField
-        id="sourcePath"
-        title="Path*"
-        placeholder={"/path/to/source/file/or/folder"}
-        defaultValue={getValue("source.path")}
-        onChange={setValue.bind(this, "source.path")}
+      <EntryLocationFormFields
+        identifier="source"
+        location={entry.source}
+        sshEnabled={entry.sshSelection === "source"}
+        onChange={value => setValue("source", value)}
       />
 
       <Form.Separator />
       <Form.Description text="Destination" />
-
-      {getSshFields("destination")}
-      <Form.TextField
-        id="destinationPath"
-        title="Path*"
-        placeholder={"/path/to/destination/file/or/folder"}
-        defaultValue={getValue("destination.path")}
-        onChange={setValue.bind(this, "destination.path")}
+      <EntryLocationFormFields
+        identifier="destination"
+        location={entry.destination}
+        sshEnabled={entry.sshSelection === "destination"}
+        onChange={value => setValue("destination", value)}
       />
 
       <Form.Separator />
@@ -223,7 +159,16 @@ const EntryForm: FC<EntryFormProps> = ({ source }) => {
         info="Filter the list to find a specific option."
         onChange={setOptionFilter}
       />
-      {visibleOptions.map(getOptionFields)}
+      {visibleOptions.map(option => (
+        <EntryOptionFormFields
+          key={option.name}
+          option={entry.options[option.name]}
+          optionSource={option}
+          onChange={value => {
+            onOptionChange(option, value)
+          }}
+        />
+      ))}
     </Form>
   )
 }
