@@ -2,13 +2,13 @@ import create from "zustand"
 import Entry from "./models/entry"
 
 interface NavigationStore {
-  createdEntry: string | undefined
-  setCreatedEntry: (id: string) => void
+  selectedEntry: string | undefined
+  setSelectedEntry: (id: string | undefined) => void
 }
 
 const useNavigationStore = create<NavigationStore>(set => ({
-  createdEntry: undefined,
-  setCreatedEntry: (id: string) => set({ createdEntry: id }),
+  selectedEntry: undefined,
+  setSelectedEntry: (id: string | undefined) => set({ selectedEntry: id }),
 }))
 
 interface EntryStore {

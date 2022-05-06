@@ -1,5 +1,5 @@
 import Entry, { RsyncEntryRaw } from "../models/entry"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   LocalStorage,
   showToast,
@@ -30,7 +30,7 @@ const useEntries = (): UseEntriesOutput => {
 
   const { push } = useNavigation()
   const [entries, setEntries] = useEntryStore(state => [state.entries, state.setEntries])
-  const setCreatedEntry = useNavigationStore(state => state.setCreatedEntry)
+  const setCreatedEntry = useNavigationStore(state => state.setSelectedEntry)
   const preferences = getPreferenceValues<Preferences>()
 
   const storeEntries = (entries: Entry[]) => {
@@ -41,19 +41,6 @@ const useEntries = (): UseEntriesOutput => {
     (entries: Entry[]) => {
       setEntries(entries)
       storeEntries(entries)
-    },
-    [setEntries]
-  )
-
-  useEffect(
-    function () {
-      const loadEntries = async () => {
-        const entries = await LocalStorage.getItem<string>("entries")
-        const rsyncEntries = entries ? JSON.parse(entries).map((e: RsyncEntryRaw) => new Entry(e)) : []
-        setEntries(rsyncEntries)
-      }
-
-      loadEntries()
     },
     [setEntries]
   )

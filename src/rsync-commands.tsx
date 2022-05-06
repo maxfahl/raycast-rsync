@@ -1,9 +1,10 @@
-import { Action, ActionPanel, Form, Icon, List } from "@raycast/api"
+import { Action, ActionPanel, Icon, List, LocalStorage } from "@raycast/api"
 import EntryForm from "./views/entry-form"
-import Entry from "./models/entry"
+import Entry, { RsyncEntryRaw } from "./models/entry"
 import useEntries from "./hooks/use-entries"
-import { useCallback, useEffect, useState } from "react"
-import { useNavigationStore } from "./store"
+import { useEffect, useState } from "react"
+import { useEntryStore, useNavigationStore } from "./store"
+import EntryListItem from "./components/entry-list-item"
 
 type EntrySorting = "name" | "runCount" | "createdAt"
 
@@ -16,82 +17,18 @@ const RsyncCommands = () => {
   const [entryFilter, setEntryFilter] = useState<string>("")
   const [pinnedEntries, setPinnedEntries] = useState<Entry[]>([])
   const [otherEntries, setOtherEntries] = useState<Entry[]>([])
-  const [selectedItemId, setSelectedItemId] = useState<string | undefined>(undefined)
+  // const [selectedItemId, setSelectedItemId] = useState<string | undefined>(undefined)
 
-  const { entries, deleteEntry, updateEntry, runEntry, copyEntryCommand, entryRunning } = useEntries()
-  const createdEntry = useNavigationStore(state => state.createdEntry)
+  const { entries, entryRunning } = useEntries()
+  const selectedEntry = useNavigationStore(state => state.selectedEntry)
+  const setEntries = useEntryStore(state => state.setEntries)
 
-  const toggleEntryPin = useCallback(
-    async (entry: Entry) => {
-      const clone = entry.clone()
-      clone.pinned = !entry.pinned
-      await updateEntry(clone, false, true)
-      setSelectedItemId(clone.id)
-    },
-    [updateEntry]
-  )
-
-  const duplicateEntry = (entry: Entry) => {
-    const clone = entry.clone()
-    clone.id = undefined
-    clone.name = `${clone.name} Duplicate`
-    clone.pinned = false
-    clone.confirmed = false
-    return clone
-  }
-
-  const getListItem = useCallback(
-    function (entry: Entry) {
-      return (
-        <List.Item
-          id={entry.id}
-          key={entry.id}
-          title={entry.name}
-          accessories={[
-            { text: entry.description },
-            {
-              icon: Icon.LevelMeter,
-              tooltip: `Used ${entry.runCount} time${entry.runCount !== 1 ? "s" : ""}`,
-            },
-          ]}
-          actions={
-            <ActionPanel>
-              <Action title="Run" onAction={() => runEntry(entry)} />
-              <Action.Push title="Edit" target={<EntryForm source={entry} />} />
-              <Action
-                title="Delete"
-                shortcut={{ modifiers: ["cmd", "shift"], key: "backspace" }}
-                onAction={() => deleteEntry(entry)}
-              />
-              <Action.Push
-                title="Duplicate"
-                shortcut={{ modifiers: ["cmd", "shift"], key: "d" }}
-                target={<EntryForm source={duplicateEntry(entry)} />}
-              />
-              <Action
-                title="Copy to Clipboard"
-                shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
-                onAction={() => copyEntryCommand(entry)}
-              />
-              <Action
-                title={entry.pinned ? "Unpin" : "Pin"}
-                shortcut={{ modifiers: ["cmd", "shift"], key: "p" }}
-                onAction={() => toggleEntryPin(entry)}
-              />
-            </ActionPanel>
-          }
-        />
-      )
-    },
-    [copyEntryCommand, deleteEntry, toggleEntryPin, runEntry]
-  )
-
-  useEffect(
-    function () {
-      if (createdEntry) setSelectedItemId(createdEntry)
-    },
-    [createdEntry]
-  )
+  // useEffect(
+  //   function () {
+  //     if (selectedEntry) setSelectedItemId(selectedEntry)
+  //   },
+  //   [selectedEntry]
+  // )
 
   const sortEntries = (a: Entry, b: Entry, sortBy: EntrySorting) => {
     switch (sortBy) {
@@ -105,6 +42,7 @@ const RsyncCommands = () => {
   useEffect(
     function () {
       if (!sortBy) return
+      console.log(entries.length)
       const filterStr = entryFilter.trim()
       const filteredAndSortedEntries = (
         entryFilter ? entries.filter(e => e.name.toLowerCase().includes(filterStr)) : entries
@@ -115,6 +53,19 @@ const RsyncCommands = () => {
     [entries, sortBy, entryFilter]
   )
 
+  useEffect(
+    function () {
+      const loadEntries = async () => {
+        const entries = await LocalStorage.getItem<string>("entries")
+        const rsyncEntries = entries ? JSON.parse(entries).map((e: RsyncEntryRaw) => new Entry(e)) : []
+        setEntries(rsyncEntries)
+      }
+
+      loadEntries()
+    },
+    [setEntries]
+  )
+
   return (
     <List
       isLoading={entryRunning}
@@ -122,7 +73,7 @@ const RsyncCommands = () => {
       onSearchTextChange={setEntryFilter}
       navigationTitle="Rsync Commands"
       searchBarPlaceholder=""
-      selectedItemId={selectedItemId}
+      selectedItemId={selectedEntry}
       searchBarAccessory={
         <List.Dropdown
           id="sortOrder"
@@ -146,8 +97,16 @@ const RsyncCommands = () => {
           </ActionPanel>
         }
       />
-      <List.Section title="Pinned Entries">{pinnedEntries.map(getListItem)}</List.Section>
-      <List.Section title="Entries">{otherEntries.map(getListItem)}</List.Section>
+      <List.Section title="Pinned Entries">
+        {pinnedEntries.map(entry => (
+          <EntryListItem key={entry.id} entry={entry} />
+        ))}
+      </List.Section>
+      <List.Section title="Entries">
+        {otherEntries.map(entry => (
+          <EntryListItem key={entry.id} entry={entry} />
+        ))}
+      </List.Section>
     </List>
   )
 }

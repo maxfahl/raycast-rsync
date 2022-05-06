@@ -103,6 +103,20 @@ export default class Entry {
     return new Entry(Sugar.Object.clone(this.toRawData(), true) as RsyncEntryRaw)
   }
 
+  /**
+   * Duplicate entry, resetting entry unique data.
+   */
+  duplicate(): Entry {
+    const clone = this.clone()
+    clone.id = undefined
+    clone.name = `${clone.name} Duplicate`
+    clone.pinned = false
+    clone.confirmed = false
+    clone.runCount = 0
+    clone.createdAt = new Date().getTime()
+    return clone
+  }
+
   equals(entry: Entry) {
     return JSON.stringify(entry.toRawData()) === JSON.stringify(this.toRawData())
   }
